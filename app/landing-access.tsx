@@ -10,7 +10,6 @@ type AccessMode = "login" | "register";
 export function LandingAccess() {
   const router = useRouter();
   const [mode, setMode] = useState<AccessMode>("login");
-  const [lit, setLit] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string>();
 
@@ -27,13 +26,7 @@ export function LandingAccess() {
     setMessage("Revisa tu correo para confirmar tu cuenta.");
   };
 
-  return <section className="panel relative overflow-hidden p-6 sm:p-8">
-    <button type="button" aria-pressed={lit} onClick={() => setLit((value) => !value)} className="group absolute right-2 top-1 h-40 w-32 cursor-pointer" aria-label={lit ? "Apagar foco" : "Encender foco"}>
-      <span className={`absolute right-8 top-2 h-16 w-14 rounded-[45%] border-4 border-[#062b31] transition-all ${lit ? "bg-[#fff4a8] shadow-[0_0_45px_18px_rgba(255,213,87,.6)]" : "bg-[#e6ecea]"}`} />
-      <span className="absolute right-[3.05rem] top-[4.1rem] h-6 w-8 rounded-b-lg bg-[#062b31]" />
-      <span className={`absolute right-[3.85rem] top-[5.5rem] h-20 w-1 origin-top transition-transform ${lit ? "rotate-[-12deg] bg-[#f0ba35]" : "bg-[#8da8a4]"}`} />
-      <span className="absolute right-0 top-[8.4rem] text-xs font-bold text-[#527174] opacity-0 transition-opacity group-hover:opacity-100">{lit ? "Encendido" : "Haz clic"}</span>
-    </button>
+  return <section className="panel p-6 sm:p-8">
     <p className="eyebrow">Tu acceso al tablero</p>
     <h2 className="mt-3 text-3xl font-black">{mode === "login" ? "Ingresa a HidroVista" : "Crea tu cuenta"}</h2>
     <p className="mt-2 max-w-sm text-sm leading-6 text-[#527174]">{mode === "login" ? "Consulta el monitoreo de las centrales en un solo lugar." : "Te enviaremos un correo de confirmación para activar el acceso."}</p>

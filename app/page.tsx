@@ -1,4 +1,5 @@
 import { LandingAccess } from "./landing-access";
+import { HangingBulb } from "./hanging-bulb";
 
 const sources = [
   { name: "CELEC", detail: "Telemetría de generación, caudal y operación." },
@@ -7,7 +8,8 @@ const sources = [
 ];
 
 export default function HomePage() {
-  return <main className="shell flex min-h-screen flex-col justify-center py-10 sm:py-16">
+  return <main className="shell relative flex min-h-screen flex-col justify-center py-10 sm:py-16">
+    <HangingBulb />
     <div className="grid items-center gap-10 lg:grid-cols-[1fr_.95fr]">
       <section>
         <p className="eyebrow">Ecuador · monitoreo hidroeléctrico</p>
