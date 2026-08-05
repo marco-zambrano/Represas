@@ -6,12 +6,13 @@ export function HangingBulb() {
   const [lit, setLit] = useState(false);
   const [hovered, setHovered] = useState(false);
   const glowing = lit || hovered;
-  return <button type="button" aria-pressed={lit} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocus={() => setHovered(true)} onBlur={() => setHovered(false)} onClick={() => setLit((value) => !value)} aria-label={lit ? "Apagar foco" : "Encender foco"} className="absolute -top-16 right-0 z-10 h-[355px] w-40 cursor-pointer sm:right-10">
+  return <button type="button" aria-pressed={lit} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocus={() => setHovered(true)} onBlur={() => setHovered(false)} onClick={() => setLit((value) => !value)} aria-label={lit ? "Apagar foco" : "Encender foco"} className="relative mx-auto block h-[258px] w-[116px] cursor-pointer">
+    <span className="absolute left-0 top-0 block h-[355px] w-40 origin-top-left scale-[.72]">
     <span className="absolute left-[77px] top-0 h-[188px] w-[3px] bg-[#314b4d] shadow-[1px_0_0_rgba(255,255,255,.7)]" />
     <span className="absolute left-[64px] top-0 h-5 w-8 rounded-b-md border-x-2 border-b-2 border-[#062b31] bg-[#d8e1de]" />
     <span className="absolute left-[71px] top-[178px] h-6 w-5 rounded-t-md bg-[#062b31]" />
     <span className={`absolute left-1 top-[187px] h-40 w-40 rounded-full transition-all duration-500 ${glowing ? "bg-[#ffd85a]/30 blur-xl" : "bg-transparent"}`} />
-    <svg viewBox="0 0 160 170" className={`absolute left-0 top-[180px] h-[170px] w-40 transition-all duration-500 ${glowing ? "scale-105 drop-shadow-[0_0_28px_rgba(255,202,55,.95)]" : "drop-shadow-[5px_12px_8px_rgba(6,43,49,.27)]"}`} aria-hidden="true">
+    <svg viewBox="0 0 160 170" className={`absolute left-0 top-[180px] h-[170px] w-40 transition-all duration-500 ${glowing ? "drop-shadow-[0_0_28px_rgba(255,202,55,.95)]" : "drop-shadow-[5px_12px_8px_rgba(6,43,49,.27)]"}`} aria-hidden="true">
       <defs>
         <radialGradient id="glass" cx="34%" cy="25%" r="74%"><stop offset="0" stopColor="#ffffff" /><stop offset=".25" stopColor={glowing ? "#fff9cd" : "#f9fcfb"} /><stop offset=".72" stopColor={glowing ? "#ffe16e" : "#bfd0cd"} /><stop offset="1" stopColor={glowing ? "#d99c25" : "#71898a"} /></radialGradient>
         <linearGradient id="metal" x1="0" x2="1"><stop stopColor="#001c20" /><stop offset=".45" stopColor="#4b7170" /><stop offset=".65" stopColor="#d6eeea" /><stop offset="1" stopColor="#062b31" /></linearGradient>
@@ -25,5 +26,6 @@ export function HangingBulb() {
         <path d="M64 142h32M65 148h30" stroke="#b8eddf" strokeWidth="2" opacity=".65" />
       </g>
     </svg>
+    </span>
   </button>;
 }
