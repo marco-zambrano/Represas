@@ -11,9 +11,9 @@ export function HangingBulb() {
   }, [lit]);
   return <button type="button" aria-pressed={lit} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocus={() => setHovered(true)} onBlur={() => setHovered(false)} onClick={() => setLit((value) => !value)} aria-label={lit ? "Apagar foco" : "Encender foco"} className="relative mx-auto block h-[258px] w-[116px] cursor-pointer">
     <span className="absolute left-0 top-0 block h-[355px] w-40 origin-top-left scale-[.72]">
-    <span className="absolute left-[75px] top-0 h-[188px] w-[7px] rounded-full border-x border-[#062b31] bg-gradient-to-r from-[#062b31] via-[#b3d0cb] to-[#163f43] shadow-[1px_0_2px_rgba(255,255,255,.8)]" />
+    <span className="absolute left-[77px] top-0 h-[188px] w-[6px] rounded-full border-x border-[#062b31] bg-gradient-to-r from-[#062b31] via-[#b3d0cb] to-[#163f43] shadow-[1px_0_2px_rgba(255,255,255,.8)]" />
     <span className="absolute left-[63px] top-0 h-5 w-9 rounded-b-md border-x-2 border-b-2 border-[#062b31] bg-gradient-to-r from-[#789795] via-[#e8f7f4] to-[#466967]" />
-    <span className="absolute left-[68px] top-[178px] h-7 w-9 rounded-t-md border-2 border-[#062b31] bg-gradient-to-r from-[#001c20] via-[#416766] to-[#082d31]" />
+    <span className="absolute left-[62px] top-[178px] h-7 w-9 rounded-t-md border-2 border-[#062b31] bg-gradient-to-r from-[#001c20] via-[#416766] to-[#082d31]" />
     <span className={`absolute left-1 top-[187px] h-40 w-40 rounded-full transition-all duration-500 ${glowing ? "bg-[#ffd85a]/30 blur-xl" : "bg-transparent"}`} />
     <svg viewBox="0 0 160 170" className={`absolute left-0 top-[180px] h-[170px] w-40 transition-all duration-500 ${glowing ? "drop-shadow-[0_0_28px_rgba(255,202,55,.95)]" : "drop-shadow-[5px_12px_8px_rgba(6,43,49,.27)]"}`} aria-hidden="true">
       <defs>
