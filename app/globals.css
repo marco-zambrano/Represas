@@ -1,12 +1,16 @@
 @import "tailwindcss";
 
 :root { --ink: #062b31; --ocean: #007c8d; --mint: #b8eddf; --sand: #f7f2e8; --line: #d7e3df; }
+:root[data-theme="dark"] { --ink: #f3fbf8; --ocean: #8ce8dc; --mint: #183d42; --sand: #061d22; --line: #285157; color-scheme: dark; }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--sand); color: var(--ink); font-family: Arial, Helvetica, sans-serif; }
+body { margin: 0; background: var(--sand); color: var(--ink); font-family: Arial, Helvetica, sans-serif; transition: background-color .45s ease, color .45s ease; }
 a { color: inherit; text-decoration: none; }
 .shell { max-width: 1180px; margin: auto; padding: 0 24px; }
 .eyebrow { color: var(--ocean); font-size: .75rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .button { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: .8rem 1.15rem; font-weight: 700; transition: .2s ease; }
 .button-primary { background: var(--ink); color: white; }.button-primary:hover { background: var(--ocean); }
 .button-secondary { border: 1px solid #8da8a4; }.button-secondary:hover { background: white; }
-.panel { border: 1px solid var(--line); border-radius: 20px; background: rgba(255,255,255,.76); box-shadow: 0 8px 30px rgba(11,55,53,.06); }
+.panel { border: 1px solid var(--line); border-radius: 20px; background: rgba(255,255,255,.76); box-shadow: 0 8px 30px rgba(11,55,53,.06); transition: background-color .45s ease, border-color .45s ease, box-shadow .45s ease; }
+:root[data-theme="dark"] .panel { background: rgba(14,47,53,.88); box-shadow: 0 12px 35px rgba(0,0,0,.28); }
+:root[data-theme="dark"] input { background: #0a2a30; border-color: #47767a; color: #f3fbf8; }
+:root[data-theme="dark"] .text-\[\#315a5d\], :root[data-theme="dark"] .text-\[\#527174\] { color: #b9d4d1; }
