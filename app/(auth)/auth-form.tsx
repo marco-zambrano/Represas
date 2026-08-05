@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "login" | "register" | "forgot" | "reset";
@@ -12,13 +13,14 @@ const copy: Record<Mode, { title: string; hint: string; action: string }> = {
 };
 
 export function AuthForm({ mode }: { mode: Mode }) {
+  const router = useRouter();
   const [message, setMessage] = useState<string>(); const [loading, setLoading] = useState(false);
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setLoading(true); setMessage(undefined);
     const data = new FormData(event.currentTarget); const email = String(data.get("email") || ""); const password = String(data.get("password") || "");
     const supabase = createClient(); const origin = window.location.origin;
     let error: { message: string } | null = null;
-    if (mode === "login") { ({ error } = await supabase.auth.signInWithPassword({ email, password })); if (!error) window.location.assign("/dashboard"); }
+    if (mode === "login") { ({ error } = await supabase.auth.signInWithPassword({ email, password })); if (!error) router.push("/dashboard"); }
     if (mode === "register") ({ error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${origin}/auth/confirm` } }));
     if (mode === "forgot") ({ error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/reset-password` }));
     if (mode === "reset") ({ error } = await supabase.auth.updateUser({ password }));
