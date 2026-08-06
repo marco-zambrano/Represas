@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+  <body>
+    <div class="tab-content">
+      <header><h2>DEMANDAS EMPRESAS ELÉCTRICAS DE DISTRIBUCIÓN</h2></header>
+      <div><span>Miércoles, 05 de agosto de 2026</span></div>
+      <div class="resumen">
+        <div class="resumen-box total"><div>DEMANDA TOTAL</div><div>4&nbsp;576</div></div>
+        <div class="resumen-box anterior"><div>ANTERIOR</div><div>4&nbsp;561</div></div>
+        <div class="resumen-box exportacion"><div>DEMANDA CNEL</div><div>3&nbsp;242</div></div>
+        <div class="resumen-box hidraulica"><div>EMPRESAS ELÉCTRICAS</div><div>1&nbsp;334</div></div>
+      </div>
+      <script>
+        Plotly.newPlot("distribucion", [{
+          "orientation": "h",
+          "x": [568, 115, 1099],
+          "y": ["E.E. QUITO", "EMELNORTE", "CNEL GUAYAQUIL"],
+          "type": "bar"
+        }], {});
+      </script>
+    </div>
+  </body>
+</html>
