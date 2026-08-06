@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "loctimestamp": "2026-07-15T06:00:00Z",
+      "valueedit": 85.19938833
+    },
+    {
+      "loctimestamp": "2026-07-15T07:00:00Z",
+      "valueedit": null
+    },
+    {
+      "loctimestamp": "2026-07-15T08:00:00Z",
+      "valueedit": 83.83406704
+    }
+  ],
+  "count": 3,
+  "hasMore": false
+}

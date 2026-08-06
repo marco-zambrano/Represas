@@ -1,24 +1,205 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { plants, type PlantId } from "@/lib/data/catalog";
-import type { Period, TelemetryResponse } from "@/lib/data/types";
-import { createClient } from "@/lib/supabase/client";
 
-const labels: Record<Period, string> = { day: "24 horas", month: "30 días", year: "12 meses" };
-const metric = (value: number | null | undefined, suffix: string) => value === null || value === undefined ? "—" : `${new Intl.NumberFormat("es-EC", { maximumFractionDigits: 1 }).format(value)} ${suffix}`;
-export function Dashboard({ email }: { email: string }) {
-  const router = useRouter();
-  const [plant, setPlant] = useState<PlantId>("coca-codo-sinclair"); const [period, setPeriod] = useState<Period>("day"); const [data, setData] = useState<TelemetryResponse>(); const [loading, setLoading] = useState(true);
-  useEffect(() => { let cancelled = false; fetch(`/api/telemetry?plant=${plant}&period=${period}`).then(async response => ({ response, body: await response.json() as TelemetryResponse })).then(({ body }) => { if (!cancelled) setData(body); }).catch(() => { if (!cancelled) setData({ plant, period, source: "CELEC", retrievedAt: new Date().toISOString(), observations: [], error: "No fue posible conectar con la fuente." }); }).finally(() => { if (!cancelled) setLoading(false); }); return () => { cancelled = true; }; }, [plant, period]);
-  const latest = data?.observations.at(-1);
-  const chart = useMemo(() => (data?.observations ?? []).map((row) => ({
-    ...row,
-    label: new Date(row.timestamp).toLocaleString("es-EC", { hour: "2-digit", minute: "2-digit", month: "short", day: "numeric" }),
-  })), [data]);
-  const signOut = async () => { await createClient().auth.signOut(); router.push("/"); };
-  return <main className="min-h-screen bg-[#f7f2e8]"><header className="border-b border-[#d7e3df] bg-white/70"><div className="shell flex flex-wrap items-center justify-between gap-4 py-5"><Link href="/" className="text-xl font-black">Hidro<span className="text-[#007c8d]">Vista</span></Link><div className="flex items-center gap-4 text-sm"><span className="hidden text-[#527174] sm:inline">{email}</span><button onClick={signOut} className="font-bold text-[#007c8d]">Salir</button></div></div></header><div className="shell py-8"><p className="eyebrow">Panel operativo · Ecuador continental (UTC−5)</p><div className="mt-3 flex flex-wrap items-end justify-between gap-5"><div><h1 className="text-4xl font-black tracking-tight">Monitoreo de centrales</h1><p className="mt-2 max-w-2xl text-[#527174]">Telemetría observada y pronósticos se muestran como series distintas. Un dato ausente no equivale a cero.</p></div><span className="rounded-full bg-[#e0f5ee] px-4 py-2 text-sm font-bold text-[#075a55]">Acceso autenticado</span></div><section className="panel mt-8 p-5"><div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end"><label className="text-sm font-bold">Central<select className="mt-2 block w-full rounded-xl border border-[#b6ceca] bg-white px-3 py-2 lg:w-64" value={plant} onChange={event => { setLoading(true); setPlant(event.target.value as PlantId); }}>{plants.map(item => <option key={item.id} value={item.id}>{item.name} · Río {item.river}</option>)}</select></label><div className="flex gap-2">{(Object.keys(labels) as Period[]).map(item => <button className={`rounded-full px-4 py-2 text-sm font-bold ${period === item ? "bg-[#062b31] text-white" : "border border-[#b6ceca]"}`} onClick={() => { setLoading(true); setPeriod(item); }} key={item}>{labels[item]}</button>)}</div></div></section><section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Stat label="Generación" value={metric(latest?.generationMw, "MW")} note="potencia observada"/><Stat label="Caudal" value={metric(latest?.flowM3s, "m³/s")} note="flujo observado"/><Stat label="Cota" value={metric(latest?.elevationM, "m s. n. m.")} note="nivel publicado"/><Stat label="Unidades activas" value={metric(latest?.activeUnits, "")} note="turbinas en servicio"/></section><section className="mt-5 grid gap-5 xl:grid-cols-[1.55fr_.75fr]"><div className="panel min-h-[390px] p-5"><div className="flex justify-between gap-4"><div><h2 className="text-xl font-black">Generación y caudal</h2><p className="mt-1 text-sm text-[#527174]">Observado CELEC · {labels[period]}</p></div>{loading && <span className="text-sm text-[#007c8d]">Actualizando…</span>}</div>{chart.length ? <div className="mt-5 h-[290px]"><ResponsiveContainer width="100%" height="100%"><LineChart data={chart}><XAxis dataKey="label" minTickGap={42} tick={{ fontSize: 11 }}/><YAxis yAxisId="generation" tick={{ fontSize: 11 }}/><YAxis yAxisId="flow" orientation="right" tick={{ fontSize: 11 }}/><Tooltip /><Line yAxisId="generation" dataKey="generationMw" name="Generación (MW)" stroke="#007c8d" strokeWidth={3} dot={false} connectNulls={false}/><Line yAxisId="flow" dataKey="flowM3s" name="Caudal (m³/s)" stroke="#df7b36" strokeWidth={3} dot={false} connectNulls={false}/></LineChart></ResponsiveContainer></div> : <div className="flex h-[290px] items-center justify-center rounded-2xl border border-dashed border-[#b6ceca] text-center text-[#527174]"><p><strong className="block text-[#062b31]">Sin muestras publicadas</strong>{data?.error ?? "Esperando datos de la fuente."}</p></div>}</div><aside className="panel p-5"><p className="eyebrow">Pronóstico de caudal</p><h2 className="mt-3 text-xl font-black">Tendencia, no instrucción</h2><p className="mt-4 text-sm leading-6 text-[#527174]">GEOGLOWS se incorporará cuando se configure el identificador de tramo del río. Para Coca Codo Sinclair, el estimado a 3 h requiere todos los insumos INAMHI; si falta uno, no se calcula.</p><div className="mt-6 rounded-xl bg-[#fff2dd] p-4 text-sm text-[#79531d]"><strong>Estado:</strong> pendiente de configuración verificable de fuente.</div></aside></section><section className="panel mt-5 p-5"><h2 className="text-lg font-black">Trazabilidad</h2><div className="mt-4 grid gap-4 text-sm md:grid-cols-3"><p><strong>Fuente:</strong><br/>CELEC · telemetría por central.</p><p><strong>Última consulta:</strong><br/>{data ? new Date(data.retrievedAt).toLocaleString("es-EC") : "—"}</p><p><strong>Interpretación:</strong><br/>MWh/GWh son energía acumulada; MW es potencia.</p></div></section></div></main>;
+import { useEffect, useMemo, useState } from "react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { plants, type PlantId } from "@/lib/data/catalog";
+import type { Observation, TelemetryResponse } from "@/lib/data/types";
+
+type RangePreset = "current" | "7d" | "30d" | "custom";
+type ChartRow = Observation & { time: number };
+
+const number = new Intl.NumberFormat("es-EC", { maximumFractionDigits: 1 });
+const timestamp = new Intl.DateTimeFormat("es-EC", {
+  timeZone: "America/Guayaquil",
+  day: "2-digit",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+function metric(value: number | null | undefined, unit: string) {
+  return value === null || value === undefined ? "—" : `${number.format(value)}${unit ? ` ${unit}` : ""}`;
 }
-function Stat({ label, value, note }: { label: string; value: string; note: string }) { return <article className="panel p-5"><p className="text-sm font-bold text-[#527174]">{label}</p><p className="mt-3 text-2xl font-black">{value}</p><p className="mt-1 text-xs text-[#527174]">{note}</p></article>; }
+
+function localDate(value: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(value);
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${byType.year}-${byType.month}-${byType.day}`;
+}
+
+function subtractDays(days: number) {
+  const value = new Date();
+  value.setDate(value.getDate() - days);
+  return localDate(value);
+}
+
+/** Quita sólo instantes completamente vacíos al final; jamás inventa un valor. */
+function trimEmptyTail(rows: ChartRow[]) {
+  let end = rows.length;
+  while (end > 0) {
+    const row = rows[end - 1];
+    if (row.energyMwh !== null || row.flowM3s !== null || row.activeUnits !== null) break;
+    end -= 1;
+  }
+  return rows.slice(0, end);
+}
+
+export function Dashboard() {
+  const [plant, setPlant] = useState<PlantId>("coca-codo-sinclair");
+  const [preset, setPreset] = useState<RangePreset>("current");
+  const [from, setFrom] = useState(() => localDate(new Date()));
+  const [to, setTo] = useState(() => localDate(new Date()));
+  const [data, setData] = useState<TelemetryResponse>();
+  const [requestError, setRequestError] = useState<string>();
+
+  const rangeError = useMemo(() => {
+    const start = new Date(`${from}T00:00:00Z`);
+    const end = new Date(`${to}T23:59:59Z`);
+    const days = Math.floor((end.getTime() - start.getTime()) / 86_400_000) + 1;
+    return Number.isNaN(days) || days < 1 || days > 31 ? "El historial debe estar entre 1 y 31 días." : undefined;
+  }, [from, to]);
+  const loading = !rangeError && !data && !requestError;
+
+  const resetRequest = () => {
+    setData(undefined);
+    setRequestError(undefined);
+  };
+
+  const selectPreset = (nextPreset: RangePreset) => {
+    const today = localDate(new Date());
+    setPreset(nextPreset);
+    if (nextPreset === "current") { setFrom(today); setTo(today); }
+    if (nextPreset === "7d") { setFrom(subtractDays(6)); setTo(today); }
+    if (nextPreset === "30d") { setFrom(subtractDays(29)); setTo(today); }
+    resetRequest();
+  };
+
+  useEffect(() => {
+    if (rangeError) return;
+    let cancelled = false;
+    const days = Math.floor((new Date(`${to}T23:59:59Z`).getTime() - new Date(`${from}T00:00:00Z`).getTime()) / 86_400_000) + 1;
+    const params = new URLSearchParams({ plant, period: days === 1 ? "day" : "month", from, to });
+    fetch(`/api/telemetry?${params}`)
+      .then(async (response) => {
+        const body = await response.json() as TelemetryResponse;
+        if (!response.ok) throw new Error(body.error ?? "CELEC no pudo entregar telemetría.");
+        return body;
+      })
+      .then((body) => { if (!cancelled) setData(body); })
+      .catch((error: unknown) => {
+        if (!cancelled) setRequestError(error instanceof Error ? error.message : "No fue posible conectar con la fuente CELEC.");
+      });
+    return () => { cancelled = true; };
+  }, [plant, from, to, rangeError]);
+
+  const chart = useMemo(() => trimEmptyTail(
+    (data?.observations ?? [])
+      .map((observation) => ({ ...observation, time: new Date(observation.timestamp).getTime() }))
+      .filter((observation) => Number.isFinite(observation.time)),
+  ), [data]);
+  const latest = chart.at(-1);
+  const isCocaCodo = plant === "coca-codo-sinclair";
+  const hasEnergy = chart.some((row) => row.energyMwh !== null);
+  const hasFlow = chart.some((row) => row.flowM3s !== null);
+  const hasActiveUnits = chart.some((row) => row.activeUnits !== null);
+  const showEnergyOnChart = !isCocaCodo && hasEnergy;
+  const showActiveUnits = !isCocaCodo && hasActiveUnits;
+  const cocaCodoEnergy = data?.cocaCodoEnergy;
+
+  return <div className="shell py-7 sm:py-9">
+    <section className="dashboard-intro">
+      <div>
+        <p className="eyebrow">Panorama hidroeléctrico · Ecuador continental (UTC−5)</p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Energía y caudal, en una sola lectura</h1>
+        <p className="mt-2 max-w-2xl text-[var(--muted)]">Telemetría observada de CELEC. Cada serie conserva su unidad; un dato no publicado se mantiene como ausencia, nunca como cero.</p>
+      </div>
+    </section>
+
+    <section className="panel control-panel mt-7 p-4 sm:p-5">
+      <div className="grid gap-5 xl:grid-cols-[minmax(230px,.7fr)_minmax(0,1.3fr)] xl:items-end">
+        <label className="text-sm font-bold text-[var(--foreground)]">Central hidroeléctrica
+          <select className="mt-2 block w-full rounded-xl border px-3 py-3 text-base" value={plant} onChange={(event) => { setPlant(event.target.value as PlantId); resetRequest(); }}>
+            {plants.map((item) => <option key={item.id} value={item.id}>{item.name} · río {item.river}</option>)}
+          </select>
+        </label>
+        <div>
+          <p className="text-sm font-bold">Periodo de consulta</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {([ ["current", "Datos actuales"], ["7d", "Últimos 7 días"], ["30d", "Últimos 30 días"], ["custom", "Rango personalizado"] ] as [RangePreset, string][]).map(([value, label]) => <button key={value} onClick={() => selectPreset(value)} className={`filter-chip ${preset === value ? "filter-chip-active" : ""}`}>{label}</button>)}
+          </div>
+          <div className="mt-3 grid max-w-md grid-cols-2 gap-3">
+            <label className="text-xs font-bold text-[var(--muted)]">Desde<input type="date" value={from} max={to} onChange={(event) => { setPreset("custom"); setFrom(event.target.value); resetRequest(); }} className="mt-1 block w-full rounded-lg border px-2 py-2 text-sm" /></label>
+            <label className="text-xs font-bold text-[var(--muted)]">Hasta<input type="date" value={to} min={from} max={localDate(new Date())} onChange={(event) => { setPreset("custom"); setTo(event.target.value); resetRequest(); }} className="mt-1 block w-full rounded-lg border px-2 py-2 text-sm" /></label>
+          </div>
+        </div>
+      </div>
+      {rangeError && <p role="alert" className="mt-4 rounded-xl bg-[var(--danger-surface)] px-4 py-3 text-sm text-[var(--danger-foreground)]">{rangeError}</p>}
+    </section>
+
+    <section aria-label="Indicadores operativos" className={`mt-5 grid gap-3 ${isCocaCodo ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
+      <Stat tone="energy" label="Energía producida" value={metric(isCocaCodo ? cocaCodoEnergy?.energyMwh : latest?.energyMwh, "MWh")} note={isCocaCodo ? cocaCodoEnergy?.dataAsOf ? `CENACE · ${cocaCodoEnergy.dataAsOf}` : "CENACE · snapshot operativo preliminar" : "última muestra publicada"} />
+      <Stat tone="flow" label="Caudal" value={metric(latest?.flowM3s, "m³/s")} note="flujo observado" />
+      {!isCocaCodo && <Stat tone="units" label="Turbinas activas" value={metric(latest?.activeUnits, "")} note="unidades en servicio" />}
+    </section>
+
+    <ChartPanel loading={loading} error={requestError ?? data?.error} hasData={Boolean(chart.length)}>
+      <div className="chart-head">
+        <div><p className="eyebrow">Lectura integrada</p><h2 className="mt-2 text-xl font-black">{isCocaCodo ? "Caudal observado" : "Producción y operación"}</h2><p className="mt-1 text-sm text-[var(--muted)]">{isCocaCodo ? "Serie hidráulica CELEC; la energía se presenta arriba como snapshot CENACE." : "Energía, caudal y turbinas en ejes independientes."}</p></div>
+        <SeriesLegend latest={latest} available={{ energy: showEnergyOnChart, flow: hasFlow, units: showActiveUnits }} />
+      </div>
+      <div className="mt-5 h-[330px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chart} margin={{ top: 12, right: 24, bottom: 4, left: 0 }}>
+            <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 5" vertical={false} />
+            <XAxis type="number" dataKey="time" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(value) => timestamp.format(new Date(value))} minTickGap={54} tick={axisTick} />
+            <YAxis yAxisId="energy" tick={axisTick} width={58} />
+            <YAxis yAxisId="flow" orientation="right" tick={axisTick} width={56} />
+            <YAxis yAxisId="units" orientation="right" tick={axisTick} width={44} allowDecimals={false} />
+            <Tooltip contentStyle={tooltipStyle} labelFormatter={(value) => timestamp.format(new Date(Number(value)))} formatter={(value, name) => [formatTooltipValue(value, String(name)), name]} />
+            {showEnergyOnChart && <Line yAxisId="energy" type="monotone" dataKey="energyMwh" name="Energía" stroke="var(--chart-energy)" strokeWidth={3} dot={false} activeDot={{ r: 5 }} connectNulls={false} />}
+            {hasFlow && <Line yAxisId="flow" type="monotone" dataKey="flowM3s" name="Caudal" stroke="var(--chart-flow)" strokeWidth={3} strokeDasharray="9 4" dot={false} activeDot={{ r: 5 }} connectNulls={false} />}
+            {showActiveUnits && <Line yAxisId="units" type="stepAfter" dataKey="activeUnits" name="Turbinas activas" stroke="var(--chart-units)" strokeWidth={3} strokeDasharray="2 4" dot={false} activeDot={{ r: 5 }} connectNulls={false} />}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      {isCocaCodo && <p className="mt-4 rounded-xl border border-[var(--border-strong)] bg-[var(--surface-subtle)] px-4 py-3 text-sm text-[var(--muted)]"><strong className="text-[var(--foreground)]">Coca Codo Sinclair opera a filo de agua.</strong> No se representa cota ni turbinas. El caudal proviene de CELEC; la energía es el acumulado preliminar de CENACE y no se dibuja contra esta serie horaria.</p>}
+    </ChartPanel>
+  </div>;
+}
+
+function formatTooltipValue(value: unknown, name: string) {
+  const numeric = typeof value === "number" ? value : null;
+  if (name === "Energía") return metric(numeric, "MWh");
+  if (name === "Caudal") return metric(numeric, "m³/s");
+  return metric(numeric, "");
+}
+
+const axisTick = { fill: "var(--text-subtle)", fontSize: 11 };
+const tooltipStyle = { borderRadius: 14, border: "1px solid var(--border-strong)", background: "var(--surface-raised)", color: "var(--foreground)", boxShadow: "var(--shadow-panel)" };
+
+function SeriesLegend({ latest, available }: { latest?: ChartRow; available: { energy: boolean; flow: boolean; units: boolean } }) {
+  const series = [
+    available.energy ? ["energy", "Energía", metric(latest?.energyMwh, "MWh"), "continua"] : null,
+    available.flow ? ["flow", "Caudal", metric(latest?.flowM3s, "m³/s"), "segmentada"] : null,
+    available.units ? ["units", "Turbinas", metric(latest?.activeUnits, ""), "punteada"] : null,
+  ].filter((series): series is [string, string, string, string] => series !== null);
+  return <ul aria-label="Leyenda y valores más recientes" className="series-legend">
+    {series.map(([tone, label, value, pattern]) => <li key={tone} className={`legend-${tone}`}><span className="legend-line" aria-hidden="true" /><span><strong>{label}</strong><small>{pattern}</small></span><b>{value}</b></li>)}
+  </ul>;
+}
+
+function ChartPanel({ loading, error, hasData, children }: { loading: boolean; error?: string; hasData: boolean; children: React.ReactNode }) {
+  return <section className="panel chart-panel mt-5 p-5">{hasData ? children : <div className="flex h-[330px] items-center justify-center rounded-2xl border border-dashed border-[var(--border-strong)] px-6 text-center text-[var(--muted)]"><p><strong className="block text-[var(--foreground)]">{loading ? "Consultando telemetría" : "Sin muestras publicadas"}</strong><span className="mt-1 block text-sm">{error ?? "La fuente aún no publicó datos para este período."}</span></p></div>}</section>;
+}
+
+function Stat({ tone, label, value, note }: { tone: "energy" | "flow" | "units"; label: string; value: string; note: string }) {
+  return <article className={`panel stat-card stat-${tone} p-5`}><p className="text-sm font-bold text-[var(--muted)]">{label}</p><p className="mt-3 text-2xl font-black tracking-tight">{value}</p><p className="mt-1 text-xs text-[var(--muted)]">{note}</p></article>;
+}
