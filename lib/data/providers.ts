@@ -118,24 +118,28 @@ export async function getTelemetry(
   ]);
 
   const fallbackWarnings: string[] = [];
-  if (shouldFindLatestCcsPublishedDay(plantId, effectiveRequest, energy)) {
+  if (shouldFindLatestPublishedDay(plantId, effectiveRequest, energy, flow, activeUnits)) {
     for (let daysAgo = 1; daysAgo <= CCS_PUBLISHED_ENERGY_LOOKBACK_DAYS; daysAgo += 1) {
       const date = addDays(effectiveRequest.range.from, -daysAgo);
       const fallbackRange = createDateRange(date, date, "current");
       const fallbackWindow = rangeToCelecUtcWindow(fallbackRange);
       const fallbackEnergy = await loadEnergy(plantId, plant.celec.code, fallbackRange, fallbackWindow);
-      if (!hasPublishedEnergy(fallbackEnergy.rows)) continue;
-
       const [fallbackFlow, fallbackActiveUnits] = await Promise.all([
         loadPointMetric("flow", plant.celec.points.flowM3s, fallbackRange, fallbackWindow),
         loadPointMetric("activeUnits", plant.celec.points.activeUnits, fallbackRange, fallbackWindow),
       ]);
+      if (!hasPublishedTelemetry(plantId, fallbackEnergy, fallbackFlow, fallbackActiveUnits)) continue;
+
       effectiveRequest = { ...effectiveRequest, range: fallbackRange };
       window = fallbackWindow;
       energy = fallbackEnergy;
       flow = fallbackFlow;
       activeUnits = fallbackActiveUnits;
-      fallbackWarnings.push(`CELEC aún no publicó energía horaria de Coca Codo Sinclair para ${resolvedRequest.range.from}; se muestra la última jornada con energía publicada (${date}).`);
+      fallbackWarnings.push(
+        plantId === "coca-codo-sinclair"
+          ? `CELEC aún no publicó energía horaria de Coca Codo Sinclair para ${resolvedRequest.range.from}; se muestra la última jornada con energía publicada (${date}).`
+          : `CELEC aún no publicó telemetría para ${resolvedRequest.range.from}; se muestra la última jornada con datos publicada (${date}).`,
+      );
       break;
     }
   }
@@ -191,20 +195,33 @@ export async function getTelemetry(
 }
 
 /**
- * CELEC puede dejar toda la jornada de CCS en cero antes de publicar la
- * producción. Sólo en la vista actual se prueba un día anterior; los rangos
- * manuales se respetan estrictamente y nunca se sustituyen.
+ * CELEC puede tardar en publicar una jornada completa. Sólo en la vista actual
+ * se prueba un día anterior; los rangos manuales se respetan estrictamente y
+ * nunca se sustituyen. Para CCS, una jornada de energía toda en cero también
+ * se considera no publicada.
  */
-function shouldFindLatestCcsPublishedDay(
+function shouldFindLatestPublishedDay(
   plantId: PlantId,
   request: TelemetryRequest,
   energy: MetricResult,
+  flow: MetricResult,
+  activeUnits: MetricResult,
 ) {
-  return plantId === "coca-codo-sinclair" && request.range.kind === "current" && !hasPublishedEnergy(energy.rows);
+  return request.range.kind === "current" && !hasPublishedTelemetry(plantId, energy, flow, activeUnits);
 }
 
 function hasPublishedEnergy(rows: TimeValue[]) {
   return rows.some((row) => row.value !== null);
+}
+
+function hasPublishedTelemetry(
+  plantId: PlantId,
+  energy: MetricResult,
+  flow: MetricResult,
+  activeUnits: MetricResult,
+) {
+  if (plantId === "coca-codo-sinclair") return hasPublishedEnergy(energy.rows);
+  return [energy, flow, activeUnits].some((metric) => metric.rows.some((row) => row.value !== null));
 }
 
 /**

@@ -105,7 +105,11 @@ export function Dashboard() {
     let cancelled = false;
     const controller = new AbortController();
     const days = Math.floor((new Date(`${to}T23:59:59Z`).getTime() - new Date(`${from}T00:00:00Z`).getTime()) / 86_400_000) + 1;
-    const params = new URLSearchParams({ plant, period: days === 1 ? "day" : "month", from, to });
+    // El modo actual permite al servidor usar la última jornada que CELEC haya
+    // publicado. Un rango elegido por la persona siempre conserva sus fechas.
+    const params = mode === "current"
+      ? new URLSearchParams({ plant, period: "current" })
+      : new URLSearchParams({ plant, period: days === 1 ? "day" : "month", from, to });
     fetch(`/api/telemetry?${params}`, { signal: controller.signal })
       .then(async (response) => {
         const body = await response.json() as TelemetryResponse;
@@ -117,7 +121,7 @@ export function Dashboard() {
         if (!cancelled && !controller.signal.aborted) setRequestError(error instanceof Error ? error.message : "No fue posible conectar con la fuente CELEC.");
       });
     return () => { cancelled = true; controller.abort(); };
-  }, [plant, from, to, requestVersion]);
+  }, [plant, mode, from, to, requestVersion]);
 
   const chart = useMemo(() => trimEmptyTail(
     (data?.observations ?? [])
