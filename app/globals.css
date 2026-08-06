@@ -660,8 +660,9 @@ button:not(:disabled),
 .calendar-days button { min-width: 0; border-radius: 999px; color: var(--foreground); font-size: 0.75rem; font-weight: 750; transition: background-color 150ms ease, color 150ms ease, transform 150ms ease; }
 .calendar-days button:hover:not(:disabled) { background: var(--surface-muted); transform: scale(1.06); }
 .calendar-days button:disabled { cursor: not-allowed; color: color-mix(in srgb, var(--text-subtle) 36%, transparent); }
-.calendar-days .calendar-day-range { border-radius: 0.35rem; background: color-mix(in srgb, var(--chart-flow) 22%, var(--surface-raised)); }
+.calendar-days .calendar-day-range { border-radius: 0.35rem; background: color-mix(in srgb, var(--chart-flow) 30%, var(--surface-raised)); box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--chart-flow) 65%, transparent); }
 .calendar-days .calendar-day-selected { background: var(--foreground); color: var(--surface-raised); }
+.calendar-days .calendar-day-preview-end { border: 2px dashed var(--chart-flow); background: color-mix(in srgb, var(--chart-flow) 13%, var(--surface-raised)); color: var(--foreground); }
 
 .date-range-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
 .date-range-actions p { margin: 0; color: var(--text-subtle); font-size: 0.78rem; font-weight: 700; }
