@@ -42,6 +42,9 @@ test("el contexto del agente conserva observaciones, pronóstico y cambios expli
   assert.equal(plant.forecast.direction, "increasing");
   assert.equal(plant.forecast.changePercent, 20);
   assert.equal(plant.forecast.series, "high_res");
+  assert.equal(plant.localTrend.flowM3s, 400);
+  assert.equal(plant.localTrend.targetAt, "2026-08-05T14:00:00.000Z");
+  assert.equal(plant.localTrend.disclaimer.includes("no es un pronóstico GEOGLOWS"), true);
   assert.deepEqual(plant.sources.map((source) => source.source), ["CELEC", "GEOGLOWS"]);
   assert.ok(plant.notableChanges.some((message) => message.includes("caudal cambió +25%")));
 });
@@ -61,6 +64,7 @@ test("el contexto no completa un pronóstico cuando GEOGLOWS no lo publica", () 
   assert.equal(plant.forecast.flowM3s, null);
   assert.equal(plant.forecast.direction, "unknown");
   assert.equal(plant.forecast.targetAt, null);
+  assert.equal(plant.localTrend.flowM3s, 400);
   assert.equal(plant.sources.find((source) => source.source === "GEOGLOWS")?.availability, "unconfigured");
 });
 

@@ -31,6 +31,19 @@ export type AgentForecastSummary = {
   series: "high_res" | "flow_avg" | null;
 };
 
+/**
+ * Extrapolación descriptiva creada únicamente a partir de las dos últimas
+ * publicaciones de CELEC. No representa un pronóstico hidrológico externo.
+ */
+export type AgentLocalTrend = {
+  targetAt: string | null;
+  flowM3s: number | null;
+  direction: "increasing" | "decreasing" | "stable" | "unknown";
+  changePercent: number | null;
+  basis: "CELEC_last_two_observations";
+  disclaimer: string;
+};
+
 export type AgentPlantEvidence = {
   id: PlantId;
   name: string;
@@ -42,6 +55,7 @@ export type AgentPlantEvidence = {
   recentObservations: AgentObservation[];
   forecast: AgentForecastSummary;
   forecastHorizon: AgentForecastSample[];
+  localTrend: AgentLocalTrend;
   ccsThreeHourForecast?: {
     status: "available" | "unconfigured" | "unavailable";
     issuedAt?: string;

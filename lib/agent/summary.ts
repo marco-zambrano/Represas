@@ -3,6 +3,7 @@ import type { ForecastObservation, ForecastResponse, Observation, SourceStatus, 
 import type {
   AgentForecastSample,
   AgentForecastSummary,
+  AgentLocalTrend,
   AgentObservation,
   AgentPlantEvidence,
 } from "./types";
@@ -56,6 +57,37 @@ function summarizeForecast(forecasts: AgentForecastSample[], latestFlow: number 
         ? "decreasing"
         : "stable";
   return { targetAt: next.timestamp, flowM3s: next.flowM3s, direction, changePercent, series: next.series };
+}
+
+function summarizeLocalTrend(latest: AgentObservation | null, previous: AgentObservation | null): AgentLocalTrend {
+  const disclaimer = "Extrapolación indicativa de 3 horas basada solo en las dos últimas publicaciones de CELEC; no es un pronóstico GEOGLOWS ni incorpora lluvia de INAMHI.";
+  if (latest?.flowM3s === null || previous?.flowM3s === null || !latest || !previous) {
+    return { targetAt: null, flowM3s: null, direction: "unknown", changePercent: null, basis: "CELEC_last_two_observations", disclaimer };
+  }
+
+  const elapsedHours = (Date.parse(latest.timestamp) - Date.parse(previous.timestamp)) / 3_600_000;
+  if (!Number.isFinite(elapsedHours) || elapsedHours < 0.25 || elapsedHours > 6) {
+    return { targetAt: null, flowM3s: null, direction: "unknown", changePercent: null, basis: "CELEC_last_two_observations", disclaimer };
+  }
+
+  const projectedFlow = Math.max(0, latest.flowM3s + ((latest.flowM3s - previous.flowM3s) / elapsedHours) * 3);
+  const roundedFlow = Number(projectedFlow.toFixed(1));
+  const changePercent = percentChange(roundedFlow, latest.flowM3s);
+  const direction = changePercent === null
+    ? "unknown"
+    : changePercent >= 5
+      ? "increasing"
+      : changePercent <= -5
+        ? "decreasing"
+        : "stable";
+  return {
+    targetAt: new Date(Date.parse(latest.timestamp) + 3 * 3_600_000).toISOString(),
+    flowM3s: roundedFlow,
+    direction,
+    changePercent,
+    basis: "CELEC_last_two_observations",
+    disclaimer,
+  };
 }
 
 export function mergeSourceStatuses(...groups: SourceStatus[][]): SourceStatus[] {
@@ -113,6 +145,7 @@ export function summarizeAgentPlant(
   const previous = recentObservations.at(-2) ?? null;
   const horizon = forecastSamples(forecastResponse.forecasts);
   const forecast = summarizeForecast(horizon, latest?.flowM3s ?? null);
+  const localTrend = summarizeLocalTrend(latest, previous);
   const ccs = forecastResponse.ccsThreeHour;
 
   return {
@@ -126,6 +159,7 @@ export function summarizeAgentPlant(
     recentObservations,
     forecast,
     forecastHorizon: horizon,
+    localTrend,
     ...(ccs
       ? {
           ccsThreeHourForecast: {
