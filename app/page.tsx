@@ -8,9 +8,9 @@ const sources = [
 ];
 
 export default function HomePage() {
-  return <main className="shell flex min-h-screen flex-col justify-center py-10 sm:py-16">
+  return <main className="shell flex h-dvh flex-col justify-center overflow-hidden py-4 sm:py-6">
     <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_116px_minmax(360px,.9fr)]">
-      <section>
+      <section className="hidden lg:block">
         <p className="eyebrow">Ecuador · monitoreo hidroeléctrico</p>
         <h1 className="mt-4 max-w-2xl text-5xl font-black leading-[.95] tracking-tight sm:text-7xl">HidroVista</h1>
         <p className="mt-6 max-w-xl text-lg leading-8 text-[#315a5d]">Información clara y trazable sobre el estado de las principales centrales hidroeléctricas ecuatorianas.</p>
@@ -18,9 +18,8 @@ export default function HomePage() {
           {sources.map((source) => <article className="panel p-5" key={source.name}><h2 className="text-lg font-black">{source.name}</h2><p className="mt-2 text-sm leading-6 text-[#527174]">{source.detail}</p></article>)}
         </div>
       </section>
-      <HangingBulb />
+      <div className="hidden lg:block"><HangingBulb /></div>
       <LandingAccess />
     </div>
-    <footer className="mt-12 border-t border-[#d7e3df] pt-6 text-sm text-[#527174]">Datos públicos para comprensión, no para operación.</footer>
   </main>;
 }
