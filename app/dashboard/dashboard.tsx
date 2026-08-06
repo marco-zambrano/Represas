@@ -160,9 +160,9 @@ export function Dashboard() {
           <LineChart data={chart} margin={{ top: 12, right: 24, bottom: 4, left: 0 }}>
             <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 5" vertical={false} />
             <XAxis type="number" dataKey="time" scale="time" domain={["dataMin", "dataMax"]} tickFormatter={(value) => timestamp.format(new Date(value))} minTickGap={54} tick={axisTick} />
-            <YAxis yAxisId="energy" tick={axisTick} width={58} />
+            {showEnergyOnChart && <YAxis yAxisId="energy" tick={axisTick} width={58} />}
             <YAxis yAxisId="flow" orientation="right" tick={axisTick} width={56} />
-            <YAxis yAxisId="units" orientation="right" tick={axisTick} width={44} allowDecimals={false} />
+            {showActiveUnits && <YAxis yAxisId="units" orientation="right" tick={axisTick} width={44} allowDecimals={false} />}
             <Tooltip contentStyle={tooltipStyle} labelFormatter={(value) => timestamp.format(new Date(Number(value)))} formatter={(value, name) => [formatTooltipValue(value, String(name)), name]} />
             {showEnergyOnChart && <Line yAxisId="energy" type="monotone" dataKey="energyMwh" name="Energía" stroke="var(--chart-energy)" strokeWidth={3} dot={false} activeDot={{ r: 5 }} connectNulls={false} />}
             {hasFlow && <Line yAxisId="flow" type="monotone" dataKey="flowM3s" name="Caudal" stroke="var(--chart-flow)" strokeWidth={3} strokeDasharray="9 4" dot={false} activeDot={{ r: 5 }} connectNulls={false} />}
