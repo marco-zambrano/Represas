@@ -18,6 +18,7 @@ export const ECUADOR_TIME_ZONE = "America/Guayaquil" as const;
 export const CELEC_ORDS_DEFAULT_BASE_URL = "https://generacioncsr.celec.gob.ec:8443/ords/csr";
 const MAX_RANGE_DAYS = 31;
 const CACHE_SECONDS = 300;
+const CCS_PUBLISHED_ENERGY_LOOKBACK_DAYS = 7;
 
 type TimeValue = { timestamp: string; value: number | null };
 type MetricName = "energy" | "flow" | "activeUnits";
@@ -103,21 +104,47 @@ export async function getTelemetry(
   const resolvedRequest = typeof request === "string" ? legacyTelemetryRequest(request) : request;
   const retrievedAt = new Date().toISOString();
   const plant = getPlant(plantId);
-  const window = rangeToCelecUtcWindow(resolvedRequest.range);
+  let effectiveRequest = resolvedRequest;
+  let window = rangeToCelecUtcWindow(effectiveRequest.range);
+  const cocaCodoEnergyPromise = plantId === "coca-codo-sinclair" ? getCocaCodoProduction() : Promise.resolve(undefined);
 
-  const [energy, flow, activeUnits, cocaCodoEnergy] = await Promise.all([
-    loadEnergy(plantId, plant.celec.code, resolvedRequest.range, window),
-    loadPointMetric("flow", plant.celec.points.flowM3s, resolvedRequest.range, window),
+  let [energy, flow, activeUnits] = await Promise.all([
+    loadEnergy(plantId, plant.celec.code, effectiveRequest.range, window),
+    loadPointMetric("flow", plant.celec.points.flowM3s, effectiveRequest.range, window),
     // No se consulta un historial de turbinas: CELEC sólo lo expone como snapshot.
-    resolvedRequest.range.from === resolvedRequest.range.to
-      ? loadPointMetric("activeUnits", plant.celec.points.activeUnits, resolvedRequest.range, window)
+    effectiveRequest.range.from === effectiveRequest.range.to
+      ? loadPointMetric("activeUnits", plant.celec.points.activeUnits, effectiveRequest.range, window)
       : Promise.resolve({ metric: "activeUnits" as const, rows: [], succeeded: false, errors: [] }),
-    plantId === "coca-codo-sinclair" ? getCocaCodoProduction() : Promise.resolve(undefined),
   ]);
+
+  const fallbackWarnings: string[] = [];
+  if (shouldFindLatestCcsPublishedDay(plantId, effectiveRequest, energy)) {
+    for (let daysAgo = 1; daysAgo <= CCS_PUBLISHED_ENERGY_LOOKBACK_DAYS; daysAgo += 1) {
+      const date = addDays(effectiveRequest.range.from, -daysAgo);
+      const fallbackRange = createDateRange(date, date, "current");
+      const fallbackWindow = rangeToCelecUtcWindow(fallbackRange);
+      const fallbackEnergy = await loadEnergy(plantId, plant.celec.code, fallbackRange, fallbackWindow);
+      if (!hasPublishedEnergy(fallbackEnergy.rows)) continue;
+
+      const [fallbackFlow, fallbackActiveUnits] = await Promise.all([
+        loadPointMetric("flow", plant.celec.points.flowM3s, fallbackRange, fallbackWindow),
+        loadPointMetric("activeUnits", plant.celec.points.activeUnits, fallbackRange, fallbackWindow),
+      ]);
+      effectiveRequest = { ...effectiveRequest, range: fallbackRange };
+      window = fallbackWindow;
+      energy = fallbackEnergy;
+      flow = fallbackFlow;
+      activeUnits = fallbackActiveUnits;
+      fallbackWarnings.push(`CELEC aún no publicó energía horaria de Coca Codo Sinclair para ${resolvedRequest.range.from}; se muestra la última jornada con energía publicada (${date}).`);
+      break;
+    }
+  }
+
+  const cocaCodoEnergy = await cocaCodoEnergyPromise;
 
   const metrics = [energy, flow, activeUnits];
   const observations = mergeMetricRows(metrics, window);
-  const warnings = metrics.flatMap((metric) => metric.errors);
+  const warnings = [...metrics.flatMap((metric) => metric.errors), ...fallbackWarnings];
   const succeeded = metrics.some((metric) => metric.succeeded);
   const source: SourceStatus = succeeded
     ? {
@@ -135,8 +162,8 @@ export async function getTelemetry(
 
   return {
     plant: plantId,
-    period: resolvedRequest.period,
-    range: resolvedRequest.range,
+    period: effectiveRequest.period,
+    range: effectiveRequest.range,
     source: "CELEC",
     sources: [
       source,
@@ -161,6 +188,23 @@ export async function getTelemetry(
       ? { error: warnings[0] ?? "No fue posible consultar CELEC." }
       : {}),
   };
+}
+
+/**
+ * CELEC puede dejar toda la jornada de CCS en cero antes de publicar la
+ * producción. Sólo en la vista actual se prueba un día anterior; los rangos
+ * manuales se respetan estrictamente y nunca se sustituyen.
+ */
+function shouldFindLatestCcsPublishedDay(
+  plantId: PlantId,
+  request: TelemetryRequest,
+  energy: MetricResult,
+) {
+  return plantId === "coca-codo-sinclair" && request.range.kind === "current" && !hasPublishedEnergy(energy.rows);
+}
+
+function hasPublishedEnergy(rows: TimeValue[]) {
+  return rows.some((row) => row.value !== null);
 }
 
 /**
