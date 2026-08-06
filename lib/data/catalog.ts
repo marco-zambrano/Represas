@@ -19,6 +19,8 @@ export type Plant = {
   id: PlantId;
   name: string;
   river: string;
+  /** Fotografía de paisaje hidráulico para la tarjeta de selección. */
+  imageUrl: string;
   installedCapacityMw: number;
   turbineType: "Francis" | "Kaplan" | "Pelton" | "No especificado";
   celec: {
@@ -33,6 +35,7 @@ export const plants: readonly Plant[] = [
     id: "mazar",
     name: "Mazar",
     river: "Paute",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/7/78/Embalse_Mazar.jpg",
     installedCapacityMw: 170,
     turbineType: "Francis",
     celec: { code: "maz", points: { activeUnits: "30503", flowM3s: "30538" } },
@@ -41,6 +44,7 @@ export const plants: readonly Plant[] = [
     id: "paute-molino",
     name: "Paute-Molino",
     river: "Paute",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/b/b8/Assuan-Hochdamm_15.JPG",
     installedCapacityMw: 1100,
     turbineType: "Pelton",
     celec: { code: "mol", points: { activeUnits: "44822", flowM3s: "24811" } },
@@ -49,6 +53,7 @@ export const plants: readonly Plant[] = [
     id: "sopladora",
     name: "Sopladora",
     river: "Paute",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/9/92/Peechi_Dam_3.jpg",
     installedCapacityMw: 487,
     turbineType: "Francis",
     celec: { code: "sop", points: { activeUnits: "90503", flowM3s: "90537" } },
@@ -57,6 +62,7 @@ export const plants: readonly Plant[] = [
     id: "minas-san-francisco",
     name: "Minas San Francisco",
     river: "Jubones",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/4/47/THOMPSON_FALLS_HYDROELECTRIC_DAM_HISTORIC_DISTRICT%3B_SANDERS_COUNTY.jpg",
     installedCapacityMw: 270,
     turbineType: "Pelton",
     celec: { code: "msf", points: { activeUnits: "650503", flowM3s: "650538" } },
@@ -65,6 +71,7 @@ export const plants: readonly Plant[] = [
     id: "coca-codo-sinclair",
     name: "Coca Codo Sinclair",
     river: "Coca",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/e/e2/COCACODO_SINCLAIR_006.jpg",
     installedCapacityMw: 1500,
     turbineType: "Pelton",
     celec: { code: "ccs", points: { activeUnits: "100503", flowM3s: "100037" } },

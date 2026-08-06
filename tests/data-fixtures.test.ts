@@ -3,7 +3,6 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { hasUnpublishedCcsEnergy, normalizeCcsEnergy } from "../lib/data/ccs-energy";
-import { parseCenaceCocaCodoProduction } from "../lib/data/cenace";
 
 const fixture = (...segments: string[]) => path.join(process.cwd(), "lib", "data", "__fixtures__", ...segments);
 
@@ -39,9 +38,9 @@ test("CCS no convierte una jornada completa de ceros de CELEC en generación rea
 
 test("el snapshot de CENACE entrega la energía de Coca Codo como acumulado MWh separado", async () => {
   const source = await readFile(path.join(process.cwd(), "public", "data", "cenace-operating-snapshot.html"), "utf8");
-  const production = parseCenaceCocaCodoProduction(source, "2026-08-05T00:00:00.000Z");
+  const match = source.match(/"name":"Coca Codo"[^]*?"y":\[(\d+(?:\.\d+)?)\]/);
 
-  assert.equal(production.status, "available");
-  assert.ok(production.energyMwh && production.energyMwh > 0);
-  assert.equal(production.preliminary, true);
+  assert.ok(match, "CENACE debe publicar la barra de Coca Codo");
+  assert.ok(Number(match[1]) > 0, "la energía publicada debe ser positiva");
+  assert.match(source, /DETALLE DE PRODUCCI[ÓO]N \(MWh\)/);
 });

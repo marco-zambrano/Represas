@@ -524,6 +524,157 @@ button:not(:disabled),
   background: linear-gradient(118deg, color-mix(in srgb, var(--surface) 90%, var(--chart-flow)), var(--surface));
 }
 
+.plant-picker {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.plant-card {
+  position: relative;
+  display: flex;
+  min-height: 142px;
+  overflow: hidden;
+  align-items: flex-end;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface-inset);
+  color: #fff;
+  isolation: isolate;
+  text-align: left;
+  box-shadow: var(--shadow-panel);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.plant-card-image,
+.plant-card-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.plant-card-image {
+  z-index: -2;
+  background-position: center;
+  background-size: cover;
+  transition: transform 340ms ease, filter 340ms ease;
+}
+
+.plant-card-overlay {
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(10, 25, 42, 0.04) 20%, rgba(10, 25, 42, 0.86) 100%);
+  transition: background-color 180ms ease;
+}
+
+.plant-card-content {
+  display: block;
+  width: 100%;
+  padding: 0.8rem;
+}
+
+.plant-card-content strong,
+.plant-card-content small { display: block; }
+.plant-card-content strong { font-size: 0.93rem; font-weight: 900; line-height: 1.1; }
+.plant-card-content small { margin-top: 0.24rem; color: rgba(255, 255, 255, 0.8); font-size: 0.69rem; font-weight: 700; }
+
+.plant-card:hover,
+.plant-card:focus-visible,
+.plant-card-active {
+  border-color: var(--chart-flow);
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--chart-flow) 25%, transparent);
+  transform: translateY(-4px);
+}
+
+.plant-card:hover .plant-card-image,
+.plant-card:focus-visible .plant-card-image,
+.plant-card-active .plant-card-image { filter: saturate(1.18) contrast(1.06); transform: scale(1.1); }
+
+.plant-card-active::after {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 0.58rem;
+  height: 0.58rem;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--chart-flow);
+  box-shadow: 0 0 0 3px rgba(16, 36, 58, 0.38);
+  content: "";
+}
+
+.date-filter { background: linear-gradient(118deg, var(--surface), color-mix(in srgb, var(--surface) 92%, var(--chart-units))); }
+
+.date-mode {
+  display: inline-flex;
+  gap: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  padding: 0.25rem;
+}
+
+.date-mode button {
+  border-radius: 999px;
+  padding: 0.55rem 0.8rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+
+.date-mode .date-mode-active { background: var(--surface-raised); box-shadow: 0 2px 5px color-mix(in srgb, var(--foreground) 15%, transparent); color: var(--foreground); }
+
+.current-data-note { margin: 1.4rem 0 0; border-left: 3px solid var(--chart-flow); padding: 0.7rem 0 0.7rem 0.9rem; color: var(--text-muted); font-size: 0.9rem; }
+
+.date-range-picker { margin-top: 1.25rem; }
+
+.date-range-heading {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface-raised) 85%, transparent);
+  padding: 0.75rem 1rem;
+}
+
+.date-range-heading p { margin: 0; }
+.date-range-heading p:last-child { text-align: right; }
+.date-range-heading strong, .date-range-heading span { display: block; }
+.date-range-heading strong { color: var(--foreground); font-size: 0.9rem; }
+.date-range-heading span { margin-top: 0.12rem; color: var(--text-subtle); font-size: 0.7rem; font-weight: 700; }
+.date-range-heading i { width: 1.8rem; height: 1px; background: var(--border-strong); }
+
+.calendar-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 1rem 0 0.55rem; color: var(--text-muted); font-size: 0.78rem; font-weight: 800; }
+.calendar-toolbar button { display: grid; width: 2rem; height: 2rem; place-items: center; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-raised); color: var(--foreground); font-size: 1.5rem; line-height: 1; }
+.calendar-toolbar button:hover { border-color: var(--accent); background: var(--surface-muted); }
+
+.calendar-months { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; }
+.calendar-month { min-width: 0; }
+.calendar-month h3 { margin: 0 0 0.55rem; color: var(--foreground); font-size: 0.92rem; font-weight: 900; text-transform: capitalize; }
+.calendar-weekdays, .calendar-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.22rem; }
+.calendar-weekdays { margin-bottom: 0.25rem; color: var(--text-subtle); font-size: 0.66rem; font-weight: 800; text-align: center; }
+.calendar-days { grid-auto-rows: 2.1rem; }
+.calendar-days i { display: block; }
+.calendar-days button { min-width: 0; border-radius: 999px; color: var(--foreground); font-size: 0.75rem; font-weight: 750; transition: background-color 150ms ease, color 150ms ease, transform 150ms ease; }
+.calendar-days button:hover:not(:disabled) { background: var(--surface-muted); transform: scale(1.06); }
+.calendar-days button:disabled { cursor: not-allowed; color: color-mix(in srgb, var(--text-subtle) 36%, transparent); }
+.calendar-days .calendar-day-range { border-radius: 0.35rem; background: color-mix(in srgb, var(--chart-flow) 22%, var(--surface-raised)); }
+.calendar-days .calendar-day-selected { background: var(--foreground); color: var(--surface-raised); }
+
+.date-range-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
+.date-range-actions p { margin: 0; color: var(--text-subtle); font-size: 0.78rem; font-weight: 700; }
+.date-range-actions .date-range-error { color: var(--danger); }
+.date-range-actions .button:disabled { cursor: not-allowed; opacity: 0.48; }
+
+@media (max-width: 820px) {
+  .plant-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .plant-card:last-child { grid-column: 1 / -1; }
+  .calendar-months { grid-template-columns: 1fr; }
+  .calendar-months .calendar-month:last-child { display: none; }
+}
+
 .filter-chip {
   border: 1px solid var(--border);
   border-radius: 999px;
