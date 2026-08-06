@@ -212,11 +212,15 @@ function hasPublishedEnergy(rows: TimeValue[]) {
  * 3 h. La serie observada se devuelve separada y siempre conserva su fuente
  * CELEC para que la UI no mezcle observación y pronóstico.
  */
-export async function getForecast(plantId: PlantId, range: DateRange): Promise<ForecastResponse> {
+export async function getForecast(
+  plantId: PlantId,
+  range: DateRange,
+  observedTelemetry?: TelemetryResponse,
+): Promise<ForecastResponse> {
   const retrievedAt = new Date().toISOString();
   const period: Period = range.from === range.to ? "day" : "month";
   const [telemetry, geoglows, ccs] = await Promise.all([
-    getTelemetry(plantId, { range, period }),
+    observedTelemetry ? Promise.resolve(observedTelemetry) : getTelemetry(plantId, { range, period }),
     loadGeoglowsForecast(plantId, range),
     plantId === "coca-codo-sinclair" ? getCcsThreeHourForecast() : Promise.resolve(undefined),
   ]);

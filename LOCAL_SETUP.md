@@ -6,6 +6,14 @@
 
 La landing es pública. Registro, inicio de sesión, confirmación, recuperación de contraseña y el tablero usan Supabase Auth.
 
+## Agente HidroVista
+
+1. Aplica `supabase/migrations/20260805220000_agent_conversation_history.sql` únicamente al proyecto Supabase **Represas**.
+2. Define `OPENAI_API_KEY` en el entorno del servidor o en `.env.local`. Nunca uses `NEXT_PUBLIC_OPENAI_API_KEY`.
+3. Para incluir forecasts de caudal, configura `GEOGLOWS_FORECAST_URL` y los cinco `GEOGLOWS_REACH_ID_*` de [`.env.example`](.env.example). Para la estimación independiente de Coca Codo Sinclair a 3 horas, configura las cinco URLs `INAMHI_CCS_*_URL`.
+
+Sin esas fuentes opcionales el agente sigue mostrando la telemetría CELEC y la demanda CENACE, e indicará explícitamente qué pronósticos no están disponibles.
+
 ## Datos y límites
 
 - CELEC aporta telemetría de energía, caudal y unidades activas directamente desde los endpoints ORDS documentados. `CELEC_ORDS_BASE_URL` es opcional y sólo sirve para un proxy autorizado o pruebas.

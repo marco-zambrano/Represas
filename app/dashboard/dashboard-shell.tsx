@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/app/theme-toggle";
 const navigation = [
   { href: "/dashboard", label: "Panorama hidroeléctrico" },
   { href: "/dashboard/demanda-nacional", label: "Demanda nacional" },
+  { href: "/dashboard/agente", label: "Agente HidroVista" },
 ];
 
 export function DashboardShell({ email, children }: { email: string; children: React.ReactNode }) {

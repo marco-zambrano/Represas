@@ -93,8 +93,11 @@ npm test           # pruebas con Node Test Runner y tsx
 - `/forgot-password` — recuperación de contraseña.
 - `/dashboard` — panorama hidroeléctrico.
 - `/dashboard/demanda-nacional` — demanda nacional y mapa por áreas.
+- `/dashboard/agente` — chat privado con análisis contextual de las cinco centrales.
 - `/api/telemetry` — telemetría y pronósticos para una central autenticada.
 - `/api/national-demand` — snapshot de demanda de CENACE.
+- `/api/agent/conversations` — historial de conversaciones autenticadas.
+- `/api/agent/chat` — respuesta del Agente HidroVista con evidencia actual.
 
 ## Modelo de Coca Codo Sinclair
 
@@ -106,6 +109,17 @@ Cuando INAMHI publica todos los insumos requeridos, HidroVista calcula un pronó
 - Correlación de Pearson: `0,935`
 
 El resultado se presenta como señal de tendencia con incertidumbre, no como telemetría ni como valor operativo garantizado. El detalle metodológico está en [`information/PREDICTION_VALIDATION.md`](information/PREDICTION_VALIDATION.md).
+
+## Agente HidroVista
+
+La sección **Agente HidroVista** permite conversar sobre el estado actual de Mazar, Paute-Molino, Sopladora, Minas San Francisco y Coca Codo Sinclair, sus pronósticos de caudal y la demanda nacional.
+
+- Conserva conversaciones por usuario mediante Supabase y políticas RLS.
+- Consulta las fuentes actuales en cada respuesta y guarda la evidencia estructurada empleada.
+- Distingue telemetría CELEC, forecast GEOGLOWS, estimación INAMHI de Coca Codo Sinclair y snapshot CENACE.
+- No emite alertas ni instrucciones operativas; comunica datos ausentes y limitaciones de fuente.
+
+Para habilitarlo localmente, define `OPENAI_API_KEY` en `.env.local`. Es una variable exclusiva del servidor: nunca debe llevar el prefijo `NEXT_PUBLIC_` ni subirse al repositorio. Antes de usar el historial, aplica [`supabase/migrations/20260805220000_agent_conversation_history.sql`](supabase/migrations/20260805220000_agent_conversation_history.sql) al proyecto Supabase **Represas**.
 
 ## Documentación
 
@@ -124,4 +138,4 @@ El resultado se presenta como señal de tendencia con incertidumbre, no como tel
 
 ## Estado del proyecto
 
-Prototipo funcional orientado a demostración y análisis exploratorio. La siguiente evolución natural es registrar forecasts y observaciones históricas para crear validación continua, alertas explicables y un agente de monitoreo predictivo.
+Prototipo funcional orientado a demostración y análisis exploratorio. Incluye un agente conversacional con historial privado y evidencia por respuesta; una evolución futura podría registrar forecasts y observaciones históricas para validación continua.

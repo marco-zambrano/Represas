@@ -130,9 +130,20 @@ El modelo mejora el MAE frente a persistencia, pero su ventana de datos es limit
 - Una falla parcial puede conservar una respuesta útil; la UI muestra advertencias.
 - Los fallos y ausencias nunca se convierten en valores numéricos.
 
-## 10. Pruebas y verificación
+## 10. Agente conversacional
 
-Las pruebas utilizan fixtures locales para evitar depender de red. Cubren parsing y normalización de CELEC, forecast GEOGLOWS, snapshot CENACE y cobertura del mapa provincial.
+`/dashboard/agente` es una vista cliente de página completa; no es un chatbot flotante. El cliente consulta rutas privadas de Next.js, que validan la sesión Supabase antes de leer o escribir historial y antes de llamar a OpenAI.
+
+- `lib/agent/context.ts` recopila en paralelo telemetría y forecast de las cinco centrales más demanda CENACE. Reutiliza la telemetría ya descargada para no duplicar consultas CELEC.
+- `lib/agent/summary.ts` convierte los datos en evidencia compacta: últimas observaciones, cambios porcentuales, horizonte de pronóstico, fuentes y advertencias. Los cambios son descriptivos y no representan alertas.
+- `lib/agent/openai.ts` usa la API de Responses con `gpt-5.6-luna`, razonamiento bajo, contexto estructurado y un identificador de seguridad hash del usuario. La clave `OPENAI_API_KEY` solo se lee en servidor y las respuestas de OpenAI no se almacenan en la plataforma (`store: false`).
+- La aplicación conserva el historial en `agent_conversations` y `agent_messages`; la evidencia del contexto se guarda junto con cada mensaje del asistente para mantener trazabilidad.
+
+La migración `supabase/migrations/20260805220000_agent_conversation_history.sql` activa RLS. Los usuarios autenticados solo pueden acceder a conversaciones cuyo `user_id` coincide con `auth.uid()` y a mensajes pertenecientes a dichas conversaciones.
+
+## 11. Pruebas y verificación
+
+Las pruebas utilizan fixtures locales para evitar depender de red. Cubren parsing y normalización de CELEC, forecast GEOGLOWS, snapshot CENACE, cobertura del mapa provincial, resumen de evidencia del agente y validación de solicitudes de chat.
 
 ```bash
 npm run typecheck
@@ -141,11 +152,10 @@ npm test
 npm run build
 ```
 
-## 11. Limitaciones y evolución
+## 12. Limitaciones y evolución
 
 - CENACE se consume como snapshot HTML operativo, no como API histórica JSON.
 - La ventana pública de INAMHI es limitada y puede rotar.
 - Los endpoints públicos pueden cambiar o publicar datos incompletos.
 - Las cifras de CELEC y CENACE pueden tener períodos o definiciones diferentes.
-- Un agente predictivo futuro debería consumir estas respuestas normalizadas, registrar cada predicción y comparar posteriormente forecast contra observación antes de producir alertas o métricas.
-
+- El agente actual analiza el contexto disponible en tiempo de consulta. Un componente predictivo futuro debería registrar forecasts y compararlos posteriormente contra observaciones antes de producir métricas de precisión.
