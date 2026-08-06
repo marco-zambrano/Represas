@@ -108,7 +108,10 @@ export async function getTelemetry(
   const [energy, flow, activeUnits, cocaCodoEnergy] = await Promise.all([
     loadEnergy(plantId, plant.celec.code, resolvedRequest.range, window),
     loadPointMetric("flow", plant.celec.points.flowM3s, resolvedRequest.range, window),
-    loadPointMetric("activeUnits", plant.celec.points.activeUnits, resolvedRequest.range, window),
+    // No se consulta un historial de turbinas: CELEC sólo lo expone como snapshot.
+    resolvedRequest.range.from === resolvedRequest.range.to
+      ? loadPointMetric("activeUnits", plant.celec.points.activeUnits, resolvedRequest.range, window)
+      : Promise.resolve({ metric: "activeUnits" as const, rows: [], succeeded: false, errors: [] }),
     plantId === "coca-codo-sinclair" ? getCocaCodoProduction() : Promise.resolve(undefined),
   ]);
 
@@ -285,27 +288,40 @@ async function loadPointMetric(
   range: DateRange,
   window: UtcWindow,
 ): Promise<MetricResult> {
-  let result: FetchRowsResult;
-  try {
-    const url = celecUrl("sardomcsr/pointValues");
-    url.searchParams.set("mrid", mrid);
-    url.searchParams.set("fechaInicio", window.start.toISOString());
-    url.searchParams.set("fechaFin", window.endInclusive.toISOString());
-    // El portal exige este parámetro aun cuando el intervalo viene dado arriba.
-    url.searchParams.set("fecha", `${formatCelecDate(range.from)} 01:00:00`);
-    result = await fetchCelecRows(url, `${metric} (mrid ${mrid})`);
-  } catch (error) {
-    result = { ok: false, error: `La configuración CELEC no es válida: ${errorMessage(error)}` };
-  }
-  if (!result.ok) {
-    return { metric, rows: [], succeeded: false, errors: [result.error] };
+  // pointValues ancla la respuesta al parámetro fecha. Una petición de rango
+  // devuelve por ello sólo el primer tramo; se consulta cada jornada y se unen
+  // las muestras dentro de la ventana solicitada.
+  const results = await mapWithConcurrency(datesInRange(range), 4, async (date) => {
+    try {
+      const dayWindow = rangeToCelecUtcWindow(createDateRange(date, date, range.kind));
+      const url = celecUrl("sardomcsr/pointValues");
+      url.searchParams.set("mrid", mrid);
+      url.searchParams.set("fechaInicio", dayWindow.start.toISOString());
+      url.searchParams.set("fechaFin", dayWindow.endInclusive.toISOString());
+      url.searchParams.set("fecha", `${formatCelecDate(date)} 01:00:00`);
+      return await fetchCelecRows(url, `${metric} (mrid ${mrid}, ${date})`);
+    } catch (error) {
+      return { ok: false as const, error: `La configuración CELEC no es válida: ${errorMessage(error)}` };
+    }
+  });
+
+  const rows: TimeValue[] = [];
+  const errors: string[] = [];
+  let succeeded = false;
+  for (const result of results) {
+    if (result.ok) {
+      succeeded = true;
+      rows.push(...result.rows);
+    } else {
+      errors.push(result.error);
+    }
   }
 
   return {
     metric,
-    rows: result.rows.filter((row) => isInsideWindow(row.timestamp, window)),
-    succeeded: true,
-    errors: [],
+    rows: rows.filter((row) => isInsideWindow(row.timestamp, window)),
+    succeeded,
+    errors,
   };
 }
 

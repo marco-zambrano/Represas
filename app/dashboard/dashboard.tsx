@@ -64,6 +64,7 @@ export function Dashboard() {
   const [calendarMonth, setCalendarMonth] = useState(() => monthFromDate(new Date()));
   const [data, setData] = useState<TelemetryResponse>();
   const [requestError, setRequestError] = useState<string>();
+  const [requestVersion, setRequestVersion] = useState(0);
 
   const dateRangeError = useMemo(() => {
     if (!draftFrom || !draftTo) return "Selecciona la fecha inicial y final.";
@@ -77,6 +78,8 @@ export function Dashboard() {
   const resetRequest = () => {
     setData(undefined);
     setRequestError(undefined);
+    // Fuerza una lectura aunque se vuelva a la misma central y fecha.
+    setRequestVersion((version) => version + 1);
   };
 
   const selectCurrent = () => {
@@ -97,9 +100,10 @@ export function Dashboard() {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     const days = Math.floor((new Date(`${to}T23:59:59Z`).getTime() - new Date(`${from}T00:00:00Z`).getTime()) / 86_400_000) + 1;
     const params = new URLSearchParams({ plant, period: days === 1 ? "day" : "month", from, to });
-    fetch(`/api/telemetry?${params}`)
+    fetch(`/api/telemetry?${params}`, { signal: controller.signal })
       .then(async (response) => {
         const body = await response.json() as TelemetryResponse;
         if (!response.ok) throw new Error(body.error ?? "CELEC no pudo entregar telemetría.");
@@ -107,10 +111,10 @@ export function Dashboard() {
       })
       .then((body) => { if (!cancelled) setData(body); })
       .catch((error: unknown) => {
-        if (!cancelled) setRequestError(error instanceof Error ? error.message : "No fue posible conectar con la fuente CELEC.");
+        if (!cancelled && !controller.signal.aborted) setRequestError(error instanceof Error ? error.message : "No fue posible conectar con la fuente CELEC.");
       });
-    return () => { cancelled = true; };
-  }, [plant, from, to]);
+    return () => { cancelled = true; controller.abort(); };
+  }, [plant, from, to, requestVersion]);
 
   const chart = useMemo(() => trimEmptyTail(
     (data?.observations ?? [])
@@ -125,7 +129,7 @@ export function Dashboard() {
   // CCS usa CENACE para el KPI actual, pero `ccsEnerDia` de CELEC sí es la
   // única serie por fecha que puede representar el progreso histórico.
   const showEnergyOnChart = hasEnergy;
-  const showActiveUnits = !isCocaCodo && hasActiveUnits;
+  const showActiveUnits = !isCocaCodo && mode === "current" && hasActiveUnits;
   const cocaCodoEnergy = data?.cocaCodoEnergy;
 
   return <div className="shell py-7 sm:py-9">
@@ -155,7 +159,7 @@ export function Dashboard() {
     <section aria-label="Indicadores operativos" className={`mt-5 grid gap-3 ${isCocaCodo ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
       <Stat tone="energy" label="Energía producida" value={metric(isCocaCodo ? cocaCodoEnergy?.energyMwh : latest?.energyMwh, "MWh")} note={isCocaCodo ? cocaCodoEnergy?.dataAsOf ? `CENACE · ${cocaCodoEnergy.dataAsOf}` : "CENACE · snapshot operativo preliminar" : "última muestra publicada"} />
       <Stat tone="flow" label="Caudal" value={metric(latest?.flowM3s, "m³/s")} note="flujo observado" />
-      {!isCocaCodo && <Stat tone="units" label="Turbinas activas" value={metric(latest?.activeUnits, "")} note="unidades en servicio" />}
+      {!isCocaCodo && mode === "current" && <Stat tone="units" label="Turbinas activas" value={metric(latest?.activeUnits, "")} note="unidades en servicio" />}
     </section>
 
     <ChartPanel loading={loading} error={requestError ?? data?.error} hasData={Boolean(chart.length)}>
