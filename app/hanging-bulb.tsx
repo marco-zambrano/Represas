@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export function HangingBulb() {
   const [lit, setLit] = useState(false);
   const [hovered, setHovered] = useState(false);
   const glowing = lit || hovered;
-  useEffect(() => {
-    document.documentElement.dataset.theme = lit ? "dark" : "light";
-  }, [lit]);
   return <button type="button" aria-pressed={lit} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocus={() => setHovered(true)} onBlur={() => setHovered(false)} onClick={() => setLit((value) => !value)} aria-label={lit ? "Apagar foco" : "Encender foco"} className="relative mx-auto block h-[258px] w-[116px] cursor-pointer">
     <span className="absolute left-0 top-0 block h-[355px] w-40 origin-top-left scale-[.72]">
     <span className="absolute left-[77px] top-0 h-[188px] w-[6px] rounded-full border-x border-[#062b31] bg-gradient-to-r from-[#062b31] via-[#b3d0cb] to-[#163f43] shadow-[1px_0_2px_rgba(255,255,255,.8)]" />

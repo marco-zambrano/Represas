@@ -8,9 +8,8 @@ La landing es pública. Registro, inicio de sesión, confirmación, recuperació
 
 ## Datos y límites
 
-- CELEC aporta telemetría de generación, caudal, cota y unidades activas. Define `CELEC_TELEMETRY_URL` con la ruta pública autorizada antes de esperar muestras reales; la aplicación la consulta desde una ruta interna autenticada.
-- GEOGLOWS se usa para pronósticos de caudal cuando se configuren identificadores de tramo. INAMHI provee los insumos del cálculo a 3 horas de Coca Codo Sinclair.
-- CENACE aporta contexto nacional. Los pronósticos no son instrucciones operativas y se diferencian visualmente de las observaciones.
+- CELEC aporta telemetría de energía, caudal y unidades activas directamente desde los endpoints ORDS documentados. `CELEC_ORDS_BASE_URL` es opcional y sólo sirve para un proxy autorizado o pruebas.
+- CENACE aporta el contexto nacional actual por distribuidora en MW; es un snapshot HTML preliminar, no una API histórica.
 - Los datos no publicados se conservan como ausentes; nunca se convierten en cero.
 
 La documentación de fuentes y metodología está en `presentacion/README.md`.
