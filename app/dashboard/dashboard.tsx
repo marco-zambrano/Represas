@@ -1,5 +1,10 @@
 "use client";
 
+// El panel conserva varios filtros locales. Al editar sus hooks durante el
+// desarrollo, se fuerza un remonte para que Fast Refresh no compare listas de
+// dependencias de versiones distintas del componente.
+// @refresh reset
+
 import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
