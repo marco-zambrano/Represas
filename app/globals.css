@@ -715,6 +715,38 @@ button:not(:disabled),
 .stat-flow::before { background: var(--chart-flow); }
 .stat-units::before { background: var(--chart-units); }
 
+.stat-value-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 2rem;
+}
+
+.turbine-indicators {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  color: var(--chart-units);
+}
+
+.turbine-indicator {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: none;
+  transform-origin: center;
+  animation: turbine-spin 1.7s linear infinite;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--chart-units) 50%, transparent));
+}
+
+.turbine-indicator circle,
+.turbine-indicator path {
+  fill: currentColor;
+}
+
+@keyframes turbine-spin {
+  to { transform: rotate(360deg); }
+}
+
 .chart-panel {
   background: linear-gradient(145deg, var(--surface), color-mix(in srgb, var(--surface) 93%, var(--chart-flow)));
 }
