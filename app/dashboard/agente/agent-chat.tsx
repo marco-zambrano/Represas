@@ -143,9 +143,6 @@ export function AgentChat() {
         <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Pregunta, compara y entiende el sistema hidroeléctrico</h1>
         <p className="mt-3 max-w-3xl text-[var(--muted)]">El agente interpreta la telemetría de las cinco centrales, los pronósticos de caudal y la demanda nacional actual. No emite alertas ni instrucciones operativas.</p>
       </div>
-      <div className="agent-scope" aria-label="Fuentes que analiza el agente">
-        <span>CELEC</span><span>GEOGLOWS</span><span>INAMHI</span><span>CENACE</span>
-      </div>
     </section>
 
     <section className="agent-layout mt-6" aria-label="Conversación con el Agente HidroVista">
