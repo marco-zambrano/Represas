@@ -159,13 +159,13 @@ export function Dashboard() {
     <section aria-label="Indicadores operativos" className={`mt-5 grid gap-3 ${isCocaCodo ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
       <Stat tone="energy" label="Energía producida" value={metric(isCocaCodo ? cocaCodoEnergy?.energyMwh : latest?.energyMwh, "MWh")} note={isCocaCodo ? cocaCodoEnergy?.dataAsOf ? `CENACE · ${cocaCodoEnergy.dataAsOf}` : "CENACE · snapshot operativo preliminar" : "última muestra publicada"} />
       <Stat tone="flow" label="Caudal" value={metric(latest?.flowM3s, "m³/s")} note="flujo observado" />
-      {!isCocaCodo && mode === "current" && <Stat tone="units" label="Turbinas activas" value={metric(latest?.activeUnits, "")} note="unidades en servicio" />}
+      {!isCocaCodo && mode === "current" && <Stat tone="units" label="Turbinas activas" value={metric(latest?.activeUnits, "")} note="unidades en servicio" activeUnits={latest?.activeUnits} />}
     </section>
 
     <ChartPanel loading={loading} error={requestError ?? data?.error} hasData={Boolean(chart.length)}>
       <div className="chart-head">
         <div><p className="eyebrow">Lectura integrada</p><h2 className="mt-2 text-xl font-black">{isCocaCodo ? "Energía y caudal observados" : "Producción y operación"}</h2><p className="mt-1 text-sm text-[var(--muted)]">{isCocaCodo ? "Series históricas CELEC filtradas por fecha. El KPI superior conserva el snapshot actual de CENACE." : "Energía, caudal y turbinas en ejes independientes."}</p></div>
-        <SeriesLegend latest={latest} available={{ energy: showEnergyOnChart, flow: hasFlow, units: showActiveUnits }} energyLabel={isCocaCodo ? "Energía CELEC" : "Energía"} />
+        <SeriesLegend latest={latest} available={{ energy: showEnergyOnChart, flow: hasFlow, units: showActiveUnits }} energyLabel={isCocaCodo ? "Energía CELEC" : "Energía"} energyUnavailableLabel={isCocaCodo ? "Energía CELEC" : undefined} />
       </div>
       <div className="mt-5 h-[330px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -197,9 +197,11 @@ function formatTooltipValue(value: unknown, name: string) {
 const axisTick = { fill: "var(--text-subtle)", fontSize: 11 };
 const tooltipStyle = { borderRadius: 14, border: "1px solid var(--border-strong)", background: "var(--surface-raised)", color: "var(--foreground)", boxShadow: "var(--shadow-panel)" };
 
-function SeriesLegend({ latest, available, energyLabel = "Energía" }: { latest?: ChartRow; available: { energy: boolean; flow: boolean; units: boolean }; energyLabel?: string }) {
+function SeriesLegend({ latest, available, energyLabel = "Energía", energyUnavailableLabel }: { latest?: ChartRow; available: { energy: boolean; flow: boolean; units: boolean }; energyLabel?: string; energyUnavailableLabel?: string }) {
   const series = [
-    available.energy ? ["energy", energyLabel, metric(latest?.energyMwh, "MWh"), "continua"] : null,
+    available.energy
+      ? ["energy", energyLabel, metric(latest?.energyMwh, "MWh"), "continua"]
+      : energyUnavailableLabel ? ["energy", energyUnavailableLabel, "No publicada", "sin serie"] : null,
     available.flow ? ["flow", "Caudal", metric(latest?.flowM3s, "m³/s"), "segmentada"] : null,
     available.units ? ["units", "Turbinas", metric(latest?.activeUnits, ""), "punteada"] : null,
   ].filter((series): series is [string, string, string, string] => series !== null);
@@ -212,8 +214,17 @@ function ChartPanel({ loading, error, hasData, children }: { loading: boolean; e
   return <section className="panel chart-panel mt-5 p-5">{hasData ? children : <div className="flex h-[330px] items-center justify-center rounded-2xl border border-dashed border-[var(--border-strong)] px-6 text-center text-[var(--muted)]"><p><strong className="block text-[var(--foreground)]">{loading ? "Consultando telemetría" : "Sin muestras publicadas"}</strong><span className="mt-1 block text-sm">{error ?? "La fuente aún no publicó datos para este período."}</span></p></div>}</section>;
 }
 
-function Stat({ tone, label, value, note }: { tone: "energy" | "flow" | "units"; label: string; value: string; note: string }) {
-  return <article className={`panel stat-card stat-${tone} p-5`}><p className="text-sm font-bold text-[var(--muted)]">{label}</p><p className="mt-3 text-2xl font-black tracking-tight">{value}</p><p className="mt-1 text-xs text-[var(--muted)]">{note}</p></article>;
+function Stat({ tone, label, value, note, activeUnits }: { tone: "energy" | "flow" | "units"; label: string; value: string; note: string; activeUnits?: number | null }) {
+  const turbineCount = tone === "units" && Number.isFinite(activeUnits) ? Math.max(0, Math.round(activeUnits!)) : 0;
+  return <article className={`panel stat-card stat-${tone} p-5`}>
+    <p className="text-sm font-bold text-[var(--muted)]">{label}</p>
+    <div className="stat-value-row mt-3"><p className="text-2xl font-black tracking-tight">{value}</p>{turbineCount > 0 && <TurbineIndicators count={turbineCount} />}</div>
+    <p className="mt-1 text-xs text-[var(--muted)]">{note}</p>
+  </article>;
+}
+
+function TurbineIndicators({ count }: { count: number }) {
+  return <span className="turbine-indicators" aria-hidden="true">{Array.from({ length: count }, (_, index) => <svg key={index} className="turbine-indicator" viewBox="0 0 24 24" style={{ animationDelay: `${index * -180}ms` }}><circle cx="12" cy="12" r="2.15" /><path d="M10.7 10.3C8.1 9.8 6.4 7.2 7.2 4.1c.2-.8 1.2-1 1.7-.3l3.4 5.7a2.2 2.2 0 0 0-1.6.8Z" /><path d="M13.5 10.3c1.8-1.9 4.9-2 7.2.2.6.6.2 1.5-.6 1.6l-6.5.4a2.2 2.2 0 0 0-.1-2.2Z" /><path d="M12.1 13.6c.8 2.5-.6 5.2-3.5 6.3-.8.3-1.5-.4-1.2-1.1l3-5.8a2.2 2.2 0 0 0 1.7.6Z" /></svg>)}</span>;
 }
 
 function DateRangePicker({ month, onMonthChange, from, to, onSelect, onApply, error }: {
