@@ -132,6 +132,8 @@ El modelo mejora el MAE frente a persistencia, pero su ventana de datos es limit
 
 ## 10. Agente conversacional
 
+**Respuesta corta:** existe un solo agente LLM conversacional. Los módulos de contexto, resumen, enfoque y persistencia que lo rodean no son agentes adicionales: son código determinista de la aplicación.
+
 `/dashboard/agente` es una vista cliente de página completa; no es un chatbot flotante. El cliente consulta rutas privadas de Next.js, que validan la sesión Supabase antes de leer o escribir historial y antes de llamar a OpenAI.
 
 - `lib/agent/context.ts` recopila en paralelo telemetría y forecast de las cinco centrales más demanda CENACE. Reutiliza la telemetría ya descargada para no duplicar consultas CELEC.
@@ -140,6 +142,42 @@ El modelo mejora el MAE frente a persistencia, pero su ventana de datos es limit
 - La aplicación conserva el historial en `agent_conversations` y `agent_messages`; la evidencia del contexto se guarda junto con cada mensaje del asistente para mantener trazabilidad.
 
 La migración `supabase/migrations/20260805220000_agent_conversation_history.sql` activa RLS. Los usuarios autenticados solo pueden acceder a conversaciones cuyo `user_id` coincide con `auth.uid()` y a mensajes pertenecientes a dichas conversaciones.
+
+### 10.1 Composición y flujo real
+
+La implementación no es multiagente. `lib/agent/openai.ts` realiza una única llamada al modelo `gpt-5.6-luna` mediante la API de Responses, con razonamiento `low`, `max_output_tokens: 1200`, `store: false` y un `safety_identifier` derivado mediante SHA-256 del usuario. No hay herramientas, handoffs, selección dinámica de agentes ni un bucle autónomo.
+
+Los componentes que rodean al modelo tienen responsabilidades distintas:
+
+- `lib/agent/context.ts` es un recolector determinista. Consulta en paralelo la telemetría CELEC de las cinco centrales y la demanda nacional CENACE; luego solicita el forecast de cada central reutilizando la telemetría ya obtenida.
+- `lib/agent/summary.ts` es un transformador determinista. Conserva hasta 12 observaciones y hasta 12 muestras de forecast por central, calcula cambios porcentuales, clasifica la dirección del siguiente forecast y propaga fuentes, ausencias y advertencias.
+- `lib/agent/focus.ts` es un filtro de presentación. Busca alias de centrales en la pregunta y en la respuesta y agrega `focusPlantIds` a la evidencia guardada. Esto solo decide qué se muestra en el panel de evidencia; el modelo sigue recibiendo el contexto de las cinco centrales.
+- `lib/agent/validation.ts` valida el cuerpo de entrada, limita la pregunta a 2.000 caracteres y verifica el UUID de la conversación.
+- `app/api/agent/*` contiene la capa HTTP y de persistencia. Valida sesión, crea o recupera conversaciones, guarda el mensaje del usuario, carga hasta 12 mensajes recientes, llama al modelo, guarda la respuesta y la evidencia usada.
+
+El flujo por pregunta es:
+
+```text
+Usuario autenticado → /dashboard/agente → POST /api/agent/chat
+  → validar sesión y entrada
+  → guardar pregunta en Supabase
+  → recopilar CELEC + GEOGLOWS + INAMHI/CCS + CENACE en servidor
+  → resumir evidencia y cargar historial reciente
+  → una llamada a OpenAI Responses
+  → enfocar evidencia para la UI y guardar respuesta + evidencia JSON
+  → renderizar Markdown, historial y fuentes
+```
+
+El modelo recibe instrucciones fijas en español, la evidencia serializada como `CONTEXTO_VERIFICADO`, el historial reciente y la pregunta actual. No consulta Internet ni llama directamente a las fuentes. La aplicación recopila primero los datos y el modelo únicamente redacta una respuesta analítica con base en ellos.
+
+### 10.2 Alcance y límites
+
+- CELEC aporta telemetría observada; los valores no publicados permanecen como `null`.
+- GEOGLOWS aporta pronósticos si están configurados el endpoint y el identificador de tramo; puede quedar `unconfigured` o `unavailable`.
+- INAMHI alimenta la estimación independiente de Coca Codo Sinclair a tres horas cuando están disponibles las cinco series requeridas; la estimación conserva su disclaimer.
+- CENACE aporta el snapshot de demanda nacional y contexto preliminar. `dataAsOf` se conserva separado de `retrievedAt`.
+- El agente puede comparar y explicar tendencias, pero no calcula una nueva predicción, no valida precisión histórica en línea, no emite alertas ni entrega instrucciones de despacho, seguridad u operación.
+- La evidencia se guarda junto con cada respuesta del asistente, permitiendo reconstruir qué contexto vio la aplicación en ese turno. Las respuestas de OpenAI no se almacenan en OpenAI (`store: false`), pero sí se persiste el texto generado en el historial privado de Supabase.
 
 ## 11. Pruebas y verificación
 
