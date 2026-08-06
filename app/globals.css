@@ -1074,8 +1074,31 @@ button:not(:disabled),
   color: var(--foreground);
   font-size: 0.9rem;
   line-height: 1.6;
-  white-space: pre-wrap;
+  white-space: normal;
 }
+
+.agent-message-body > :first-child { margin-top: 0; }
+.agent-message-body > :last-child { margin-bottom: 0; }
+.agent-message-body p { margin: 0.7rem 0; }
+.agent-message-body h1,
+.agent-message-body h2,
+.agent-message-body h3,
+.agent-message-body h4 {
+  margin: 1rem 0 0.55rem;
+  color: inherit;
+  font-weight: 900;
+  line-height: 1.25;
+}
+.agent-message-body h1 { font-size: 1.25rem; }
+.agent-message-body h2 { font-size: 1.13rem; }
+.agent-message-body h3 { font-size: 1rem; }
+.agent-message-body ul,
+.agent-message-body ol { margin: 0.7rem 0; padding-left: 1.25rem; }
+.agent-message-body li + li { margin-top: 0.35rem; }
+.agent-message-body strong { font-weight: 850; }
+.agent-message-body code { border-radius: 0.3rem; padding: 0.08rem 0.25rem; background: var(--surface-muted); font-size: 0.84em; }
+.agent-message-user .agent-message-body { white-space: pre-wrap; }
+.agent-message-user .agent-message-body code { background: color-mix(in srgb, var(--accent-foreground) 18%, transparent); }
 
 .agent-message-user .agent-message-label {
   justify-content: end;
@@ -1231,6 +1254,8 @@ button:not(:disabled),
 .agent-demand-evidence p { width: 100%; margin: 0 0 0.05rem; color: var(--text-subtle); font-size: 0.68rem; font-weight: 900; letter-spacing: 0.07em; text-transform: uppercase; }
 .agent-source-available { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); color: var(--success-foreground); background: var(--success-surface); }
 .agent-source-limited { border-color: color-mix(in srgb, var(--warning) 45%, var(--border)); color: var(--warning-foreground); background: var(--warning-surface); }
+.agent-source-limitation { display: grid; gap: 0.3rem; }
+.agent-source-limitation small { max-width: 18rem; color: var(--text-subtle); font-size: 0.7rem; line-height: 1.4; }
 .agent-evidence-plants { display: grid; }
 .agent-evidence-plants > div { display: flex; justify-content: space-between; gap: 0.4rem; border-bottom: 1px solid var(--border); padding: 0.35rem 0; }
 .agent-evidence-plants strong { color: var(--foreground); font-size: 0.76rem; }

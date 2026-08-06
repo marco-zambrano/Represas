@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 import type { AgentChatResponse, AgentConversation, AgentEvidence, AgentMessage } from "@/lib/agent/types";
 
@@ -170,7 +171,7 @@ export function AgentChat() {
         <div className="agent-messages" aria-live="polite" aria-busy={sending || loadingConversation}>
           {loadingConversation ? <div className="agent-chat-loading">Cargando conversación…</div> : messages.length ? messages.map((message) => <article key={message.id} className={`agent-message agent-message-${message.role}`}>
             <p className="agent-message-label">{message.role === "assistant" ? "Agente HidroVista" : "Tú"}<span>{formatDate(message.createdAt)}</span></p>
-            <div className="agent-message-body">{message.content}</div>
+            <div className="agent-message-body">{message.role === "assistant" ? <ReactMarkdown>{message.content}</ReactMarkdown> : message.content}</div>
           </article>) : <Welcome onSuggestion={setDraft} />}
           {sending && <article className="agent-message agent-message-assistant agent-message-pending"><p className="agent-message-label">Agente HidroVista</p><div className="agent-typing"><i /><i /><i /><span>Analizando fuentes actuales…</span></div></article>}
         </div>
@@ -186,7 +187,6 @@ export function AgentChat() {
       <aside className="agent-evidence panel" aria-label="Evidencia del contexto actual">
         <div><p className="eyebrow">Evidencia</p><h2>Contexto utilizado</h2></div>
         {evidence ? <Evidence evidence={evidence} /> : <div className="agent-evidence-empty"><p>La respuesta del agente mostrará aquí las fuentes y la hora del contexto empleado.</p></div>}
-        <div className="agent-boundary"><strong>Límites</strong><p>Un pronóstico no es una medición. Los datos no publicados se conservan como ausencia y no se convierten en cero.</p></div>
       </aside>
     </section>
   </div>;
@@ -203,12 +203,12 @@ function Welcome({ onSuggestion }: { onSuggestion: (value: string) => void }) {
 
 function Evidence({ evidence }: { evidence: AgentEvidence }) {
   const available = evidence.sourceSummary.filter((source) => source.availability === "available").map((source) => source.source);
-  const unavailable = evidence.sourceSummary.filter((source) => source.availability !== "available");
+  const focusedPlants = evidence.focusPlantIds?.length
+    ? evidence.plants.filter((plant) => evidence.focusPlantIds?.includes(plant.id))
+    : evidence.plants;
   return <div className="agent-evidence-content">
     <p className="agent-evidence-time">Consultado: <strong>{formatDate(evidence.generatedAt)}</strong></p>
     <div className="agent-source-list"><p>Fuentes disponibles</p>{available.length ? available.map((source) => <span key={source} className="agent-source-available">{source}</span>) : <span>Sin fuentes disponibles</span>}</div>
-    {unavailable.length ? <div className="agent-source-list"><p>Con limitaciones</p>{unavailable.map((source) => <span key={source.source} className="agent-source-limited">{source.source} · {source.availability === "unconfigured" ? "sin configurar" : "no disponible"}</span>)}</div> : null}
-    <div className="agent-evidence-plants"><p>Centrales incluidas</p>{evidence.plants.map((plant) => <div key={plant.id}><strong>{plant.name}</strong><span>{plant.latest?.timestamp ? formatDate(plant.latest.timestamp) : "sin dato observado"}</span></div>)}</div>
-    <div className="agent-demand-evidence"><p>Demanda nacional</p><strong>{evidence.nationalDemand.nationalDemandMw === null ? "Sin dato" : `${new Intl.NumberFormat("es-EC", { maximumFractionDigits: 0 }).format(evidence.nationalDemand.nationalDemandMw)} MW`}</strong><span>{evidence.nationalDemand.dataAsOf ?? "snapshot sin fecha publicada"}</span></div>
+    <div className="agent-evidence-plants"><p>{focusedPlants.length === 1 ? "Central utilizada" : "Centrales utilizadas"}</p>{focusedPlants.map((plant) => <div key={plant.id}><strong>{plant.name}</strong><span>{plant.latest?.timestamp ? formatDate(plant.latest.timestamp) : "sin dato observado"}</span></div>)}</div>
   </div>;
 }

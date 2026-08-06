@@ -71,6 +71,8 @@ export type AgentEvidence = {
   generatedAt: string;
   modelContextVersion: 1;
   plants: AgentPlantEvidence[];
+  /** Centrales relacionadas con la pregunta y la respuesta. Ausente en historial anterior. */
+  focusPlantIds?: PlantId[];
   nationalDemand: AgentDemandEvidence;
   sourceSummary: SourceStatus[];
 };

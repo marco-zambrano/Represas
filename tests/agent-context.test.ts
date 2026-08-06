@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { summarizeAgentPlant } from "../lib/agent/summary";
+import { findFocusedPlantIds } from "../lib/agent/focus";
 import { plants } from "../lib/data/catalog";
 import type { ForecastResponse, TelemetryResponse } from "../lib/data/types";
 
@@ -61,4 +62,15 @@ test("el contexto no completa un pronóstico cuando GEOGLOWS no lo publica", () 
   assert.equal(plant.forecast.direction, "unknown");
   assert.equal(plant.forecast.targetAt, null);
   assert.equal(plant.sources.find((source) => source.source === "GEOGLOWS")?.availability, "unconfigured");
+});
+
+test("la evidencia de una comparación se limita a las centrales mencionadas", () => {
+  assert.deepEqual(
+    findFocusedPlantIds("Compara Paute-Molino y Sopladora", "Paute-Molino produjo más que Sopladora."),
+    ["paute-molino", "sopladora"],
+  );
+  assert.deepEqual(
+    findFocusedPlantIds("Resume el sistema", "Las cinco centrales siguen el contexto disponible."),
+    ["mazar", "paute-molino", "sopladora", "minas-san-francisco", "coca-codo-sinclair"],
+  );
 });

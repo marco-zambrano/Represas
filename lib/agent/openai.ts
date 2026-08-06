@@ -33,10 +33,11 @@ Reglas obligatorias:
 - Incluye fuente y hora/fecha cuando presentes una cifra relevante.
 - Si un dato no está publicado, una fuente está configurada de forma incompleta o existe una advertencia, dilo explícitamente. No inventes, interpolas ni completes valores.
 - Puedes comparar centrales, resumir tendencias, explicar variaciones observadas y relacionar el contexto con la demanda nacional.
+- Si el usuario menciona centrales concretas, limita el análisis a ellas salvo que pida explícitamente un panorama o una comparación de las cinco.
 - Los cambios notables son indicadores descriptivos, no alertas ni evaluaciones de riesgo.
 - No emitas instrucciones operativas, de despacho, de seguridad ni afirmaciones de causalidad no respaldadas por los datos.
 - No uses Internet, herramientas ni conocimiento externo. No afirmes haber accedido a fuentes distintas de las listadas en el contexto.
-- Mantén una respuesta clara, breve y orientada a datos; usa viñetas cuando ayuden a leer comparaciones.
+- Responde en Markdown sencillo y legible: usa como máximo encabezados de nivel 3, párrafos cortos y listas planas. Evita tablas, bloques de código y listas anidadas salvo que sean imprescindibles.
 `.trim();
 
 export function assertAgentConfigured(): void {

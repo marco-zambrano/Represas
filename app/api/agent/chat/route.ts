@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { collectAgentEvidence } from "@/lib/agent/context";
+import { withFocusedPlants } from "@/lib/agent/focus";
 import { AgentConfigurationError, AgentResponseError, assertAgentConfigured, generateAgentAnswer } from "@/lib/agent/openai";
 import type { AgentConversation, AgentEvidence, AgentMessage, AgentMessageRole } from "@/lib/agent/types";
 import { AgentInputError, parseAgentChatInput, titleFromQuestion } from "@/lib/agent/validation";
@@ -105,9 +106,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No fue posible generar una respuesta del agente. Intenta de nuevo." }, { status: 502 });
   }
 
+  const responseEvidence = withFocusedPlants(evidence, input.message, answer.content);
+
   const { data: savedAssistantRow, error: assistantMessageError } = await supabase
     .from("agent_messages")
-    .insert({ conversation_id: conversationId, role: "assistant", content: answer.content, evidence })
+    .insert({ conversation_id: conversationId, role: "assistant", content: answer.content, evidence: responseEvidence })
     .select("id, conversation_id, role, content, evidence, created_at")
     .single();
   if (assistantMessageError || !savedAssistantRow) return NextResponse.json({ error: databaseErrorMessage(assistantMessageError ?? {}) }, { status: 500 });
